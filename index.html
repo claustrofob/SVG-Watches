@@ -12,6 +12,7 @@
     body{
         background: #dddddd;
         overflow: hidden;
+        cursor: default;
     }
     </style>
     <link rel="apple-touch-icon" href="icon.png"/>
@@ -42,19 +43,21 @@
         }
         ]]></style>
     </defs>
-    <g transform="translate(500, 500)" id="clockface">
-        <circle cx="0" cy="0" r="494" stroke="#000" fill="#222" stroke-width="6" />
-        <g id="clockmarkslive" fill="#eee"></g>
-        <g id="hours">
-            <rect class="arrows" x="-100" y="-15" width="350" height="30"></rect>
-        </g>
-        <g id="minutes">
-            <rect class="arrows" x="-100" y="-15" width="480" height="30"></rect>
-        </g>
-        <g id="seconds" class="arrows seconds" mask="url(#center)">
-            <rect x="-100" y="-5" width="490" height="10" transform="rotate(0)"></rect>
-            <circle cx="0" cy="0" r="13"/>
-            <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
+    <g transform="translate(500, 500)">
+        <g id="clockface">
+            <circle cx="0" cy="0" r="494" stroke="#000" fill="#222" stroke-width="6" />
+            <g id="clockmarkslive" fill="#eee"></g>
+            <g id="hours">
+                <rect class="arrows" x="-100" y="-15" width="350" height="30"></rect>
+            </g>
+            <g id="minutes">
+                <rect class="arrows" x="-100" y="-15" width="480" height="30"></rect>
+            </g>
+            <g id="seconds" class="arrows seconds" mask="url(#center)">
+                <rect x="-100" y="-5" width="490" height="10" transform="rotate(0)"></rect>
+                <circle cx="0" cy="0" r="13"/>
+                <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
+            </g>
         </g>
         <g transform="translate(-400, -200)">
             <foreignObject id="eventPrompt" width="800" height="400" display="none">
@@ -199,9 +202,11 @@
             
             var isTouchStart = false;
             
-            clockface.ontouchstart = function(){
+            clockface.ontouchstart = function(e){
+                e.preventDefault();
                 isTouchStart = true;
                 thisObj.startHighlightMark();
+                thisObj.highlightMark(e.pageX, e.pageY);
             }
             
             document.body.ontouchmove = function(e){
@@ -219,15 +224,17 @@
             
             var isMouseDown = false;
             
-            clockface.onmousedown = function(){
+            clockface.onmousedown = function(e){
+                e.preventDefault();
                 isMouseDown = true;
                 thisObj.startHighlightMark();
+                thisObj.highlightMark(e.pageX, e.pageY);
             }
             
             document.body.onmousemove = function(e){
                 e.preventDefault();
                 if (isMouseDown){
-                    thisObj.highlightMark(e.clientX, e.clientY);
+                    thisObj.highlightMark(e.pageX, e.pageY);
                 }
             }
             
@@ -260,7 +267,8 @@
                 
                 var x = pX - Math.floor(document.body.clientWidth / 2);
                 var y = pY - Math.floor(document.body.clientHeight / 2);
-                var angle = Math.floor(this.calcAngle(0, x, 0, y) / this.markStep) * this.markStep;
+                var angle = Math.round(this.calcAngle(0, x, 0, y) / this.markStep) * this.markStep;
+                angle = this.normalizeAngle(angle);
 
                 var mark = document.getElementById(this.getMarkId(angle));
                 if (!mark) return;
@@ -282,13 +290,16 @@
             scaleMark: function(mark, reset){
                 var scaleX = '1';
                 var scaleY = '1';
+                var strokeWidth = '0';
                     
                 if (!reset){
-                    scaleX = '1.4';
-                    scaleY = '1.7';
+                    scaleX = '1.3';
+                    scaleY = '1.6';
+                    strokeWidth = '3';
                 }
             
                 mark.setAttribute('transform', 'scale('+scaleX+', '+scaleY+')');
+                mark.setAttribute("stroke-width", strokeWidth);
             },
         
             getMarkId: function(id){
@@ -374,13 +385,12 @@
                     mark.setAttribute("y", -Math.floor(height / 2));
                     mark.setAttribute("width", width);
                     mark.setAttribute("height", height);
+                    mark.setAttribute("stroke", "orange");
+                    mark.setAttribute("stroke-width", "0");
                     
                     mark.setAttribute("id", this.getMarkId(angle));
                     mark.setAttribute("data-angle", angle);
                     gRotate.setAttribute("transform", "rotate(" + angle + ")");
-                    mark.onmousedown = function(e){
-                        thisObj.markAction(e.target);
-                    };
                     
                     gTranslate.appendChild(mark);
                     gRotate.appendChild(gTranslate);
