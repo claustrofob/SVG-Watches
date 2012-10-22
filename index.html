@@ -194,54 +194,11 @@
             
             this.createMarks();
             
-            var thisObj = this;
-            
             this.activeMark = null;
             
             var clockface = document.getElementById('clockface');
-            
-            var isTouchStart = false;
-            
-            clockface.ontouchstart = function(e){
-                e.preventDefault();
-                isTouchStart = true;
-                thisObj.startHighlightMark();
-                thisObj.highlightMark(e.pageX, e.pageY);
-            }
-            
-            document.body.ontouchmove = function(e){
-                e.preventDefault();
-                if (isTouchStart){
-	                var touch = e.touches[0];
-	                thisObj.highlightMark(touch.pageX, touch.pageY);
-	            }
-            }
-            
-            document.body.ontouchend = function(){
-                isTouchStart = false;
-                thisObj.stopHighlightMark();
-            }
-            
-            var isMouseDown = false;
-            
-            clockface.onmousedown = function(e){
-                e.preventDefault();
-                isMouseDown = true;
-                thisObj.startHighlightMark();
-                thisObj.highlightMark(e.pageX, e.pageY);
-            }
-            
-            document.body.onmousemove = function(e){
-                e.preventDefault();
-                if (isMouseDown){
-                    thisObj.highlightMark(e.pageX, e.pageY);
-                }
-            }
-            
-            document.body.onmouseup = function(){
-                isMouseDown = false;
-                thisObj.stopHighlightMark();
-            }
+            this.attachTouchEvents(clockface);
+            this.attachMouseEvents(clockface);
         }
         
         Clock.prototype = {
@@ -254,6 +211,56 @@
                     calcAngle = 360 - calcAngle;
                 }
                 return calcAngle;
+            },
+        
+            attachTouchEvents: function(element){
+                var thisObj = this;
+                var isTouchStart = false;
+            
+                element.ontouchstart = function(e){
+                    e.preventDefault();
+                    isTouchStart = true;
+                    thisObj.startHighlightMark();
+                    var touch = e.touches[0];
+                    thisObj.highlightMark(touch.pageX, touch.pageY);
+                }
+                
+                document.body.ontouchmove = function(e){
+                    e.preventDefault();
+                    if (isTouchStart){
+                        var touch = e.touches[0];
+                        thisObj.highlightMark(touch.pageX, touch.pageY);
+                    }
+                }
+                
+                document.body.ontouchend = function(){
+                    isTouchStart = false;
+                    thisObj.stopHighlightMark();
+                }
+            },
+        
+            attachMouseEvents: function(element){
+                var thisObj = this;
+                var isMouseDown = false;
+            
+                element.onmousedown = function(e){
+                    e.preventDefault();
+                    isMouseDown = true;
+                    thisObj.startHighlightMark();
+                    thisObj.highlightMark(e.pageX, e.pageY);
+                }
+                
+                document.body.onmousemove = function(e){
+                    e.preventDefault();
+                    if (isMouseDown){
+                        thisObj.highlightMark(e.pageX, e.pageY);
+                    }
+                }
+                
+                document.body.onmouseup = function(){
+                    isMouseDown = false;
+                    thisObj.stopHighlightMark();
+                }
             },
         
             startHighlightMark: function(){
