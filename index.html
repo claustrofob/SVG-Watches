@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>SVG Watches</title>
+    <style>
+    html, body{
+        margin: 0;
+        padding: 0;
+    }
+    body{
+        background: #dddddd;
+        overflow: hidden;
+    }
+    </style>
+    <link rel="apple-touch-icon" href="icon.png"/>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"
+        viewBox="0 0 1000 1000"
+        preserveAspectRatio="xMidYMid meet" id="svg">
+    <defs>
+        <filter id="drop-shadow"> 
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+            <feOffset in="blur" dx="1" dy="0" result="offsetBlur"/>
+            <feMerge>
+                <feMergeNode in="offsetBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <style type="text/css"><![CDATA[
+        .arrows { 
+            fill: #eee; 
+            filter: url(#drop-shadow);
+        }
+        .seconds{
+            fill: red;
+        }
+        .mark, .smallmark{
+        
+        }
+        ]]></style>
+    </defs>
+    <g transform="translate(500, 500)" id="clockface">
+        <circle cx="0" cy="0" r="494" stroke="#000" fill="#222" stroke-width="6" />
+        <g id="clockmarkslive" fill="#eee"></g>
+        <g id="hours">
+            <rect class="arrows" x="-100" y="-15" width="350" height="30"></rect>
+        </g>
+        <g id="minutes">
+            <rect class="arrows" x="-100" y="-15" width="480" height="30"></rect>
+        </g>
+        <g id="seconds" class="arrows seconds" mask="url(#center)">
+            <rect x="-100" y="-5" width="490" height="10" transform="rotate(0)"></rect>
+            <circle cx="0" cy="0" r="13"/>
+            <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
+        </g>
+        <g transform="translate(-400, -200)">
+            <foreignObject id="eventPrompt" width="800" height="400" display="none">
+                <body xmlns="http://www.w3.org/1999/xhtml">
+                    <style type="text/css">
+                        .info-popup{
+                            padding: 30px 30px;
+                            background: #eee;
+                            border-radius: 14px;
+                            border: 8px solid #999;
+                        }
+                        .form-input{
+                            padding: 8px;
+                            width: 706px;
+                            border: 1px solid #999;
+                            border-radius: 5px;
+                            background: #efefef;
+                        }
+                        .text{
+                            color: #222;
+                            font-size: 70px;
+                            font-family: Georgia, Verdana;
+                        }
+                        .block{
+                            margin-bottom:10px;
+                        }
+                        .button{
+                            padding: 24px 20px;
+                            width: 350px;
+                            font-size: 50px;
+                        }
+                        .refuse-button{
+                            color: #777;
+                        }
+                    </style>
+                    <div class="info-popup">
+                        <form id="eventForm" method="post" action="">
+                            <div class="block input-block">
+                                <textarea id="eventName" class="form-input text" rows="2" placeholder="Wazzap!"></textarea>
+                            </div>
+                            <table width="100%">
+                                <tr>
+                                    <td align="left">
+                                        <input id="eventButtonRemove" type="button" class="text button refuse-button" name="remove" value="Remove">
+                                    </td>
+                                    <td align="right">
+                                        <input id="eventButtonSet" type="submit" class="text button" name="submit" value="Set">
+                                    </td>
+                                </tr>
+                            </table>
+                        </form>
+                    </div>
+                </body>
+            </foreignObject>
+        </g>
+    </g>
+    <script type="application/ecmascript"><![CDATA[
+        window.onload = function(){
+            var clock = new Clock();
+            clock.start();
+            
+            //localStorage.clear();
+        }
+        
+        function Mark(id){
+            this.update = new Date();
+            
+            if (id !== null){
+                this.find(id);
+            }
+        }
+        
+        Mark.prototype = {
+            id: null,
+        
+            checked: false,
+            
+            title: '',
+            
+            update: 0,
+            
+            find: function(id){
+                this.reset();
+                this.id = id;
+                
+                var data = localStorage.getItem(id);
+                if (data !== null){
+                    data = JSON.parse(data);
+                    if (typeof data == 'object'){
+                        if (data.checked !== null) this.checked = data.checked;
+                        if (data.title !== null) this.title = data.title;
+                        if (data.update !== null) this.update = new Date(data.update);
+                    }
+                }
+            },
+            
+            reset: function(){
+                this.id = null;
+                this.checked = false;
+                this.title = '';
+            },
+            
+            remove: function(){
+                localStorage.removeItem(this.id);
+                this.reset();
+            },
+            
+            save: function(){
+                this.update = new Date();
+                
+                var data = {
+                    checked: this.checked,
+                    title: this.title,
+                    update: this.update.getTime()
+                };
+                
+                localStorage.setItem(this.id, JSON.stringify(data));
+            }
+        }
+        
+        function Clock(){
+            this.startDeg = 270;
+            this.xmlns = "http://www.w3.org/2000/svg";
+            
+            this.oneHourAngle = 30;
+            this.oneMinuteAngle = 6;
+            this.oneSecondAngle = 6;
+            
+            this.markStep = 6;
+            
+            this.hoursArrow = document.getElementById('hours');
+            this.minutesArrow = document.getElementById('minutes');
+            this.secondsArrow = document.getElementById('seconds');
+            
+            this.createMarks();
+            
+            var thisObj = this;
+            
+            this.activeMark = null;
+            
+            var clockface = document.getElementById('clockface');
+            
+            var isTouchStart = false;
+            
+            clockface.ontouchstart = function(){
+                isTouchStart = true;
+                thisObj.startHighlightMark();
+            }
+            
+            document.body.ontouchmove = function(e){
+                e.preventDefault();
+                if (isTouchStart){
+	                var touch = e.touches[0];
+	                thisObj.highlightMark(touch.pageX, touch.pageY);
+	            }
+            }
+            
+            document.body.ontouchend = function(){
+                isTouchStart = false;
+                thisObj.stopHighlightMark();
+            }
+            
+            var isMouseDown = false;
+            
+            clockface.onmousedown = function(){
+                isMouseDown = true;
+                thisObj.startHighlightMark();
+            }
+            
+            document.body.onmousemove = function(e){
+                e.preventDefault();
+                if (isMouseDown){
+                    thisObj.highlightMark(e.clientX, e.clientY);
+                }
+            }
+            
+            document.body.onmouseup = function(){
+                isMouseDown = false;
+                thisObj.stopHighlightMark();
+            }
+        }
+        
+        Clock.prototype = {
+            calcAngle: function(x1, x2, y1, y2){
+                var calcAngle = Math.atan2(x1-x2,y1-y2)*(180/Math.PI);
+                calcAngle += 90;
+                if(calcAngle < 0){
+                    calcAngle = Math.abs(calcAngle);
+                } else {
+                    calcAngle = 360 - calcAngle;
+                }
+                return calcAngle;
+            },
+        
+            startHighlightMark: function(){
+                this.activeMark = null;
+            },
+        
+            highlightMark: function(pX, pY){
+                if (this.activeMark){
+                    this.scaleMark(this.activeMark, true);
+                }
+                
+                var x = pX - Math.floor(document.body.clientWidth / 2);
+                var y = pY - Math.floor(document.body.clientHeight / 2);
+                var angle = Math.floor(this.calcAngle(0, x, 0, y) / this.markStep) * this.markStep;
+
+                var mark = document.getElementById(this.getMarkId(angle));
+                if (!mark) return;
+                
+                this.scaleMark(mark);
+                
+                this.activeMark = mark;
+            },
+        
+            stopHighlightMark: function(){
+                if (!this.activeMark) return;
+
+                this.scaleMark(this.activeMark, true);
+                this.markAction(this.activeMark);
+                
+                this.activeMark = null;
+            },
+        
+            scaleMark: function(mark, reset){
+                var scaleX = '1';
+                var scaleY = '1';
+                    
+                if (!reset){
+                    scaleX = '1.4';
+                    scaleY = '1.7';
+                }
+            
+                mark.setAttribute('transform', 'scale('+scaleX+', '+scaleY+')');
+            },
+        
+            getMarkId: function(id){
+                return 'mark_' + id;
+            },
+
+            start: function(){
+                var thisObj = this;
+            
+                this.showTime();
+                setInterval(function(){
+                    thisObj.showTime();
+                }, 1000);
+            },
+            
+            showTime: function(){
+                var time = new Date();
+                var hourAngle = this.hourAngle(time);
+                
+                this.hoursArrow.setAttribute('transform', 'rotate('+hourAngle+')');
+                this.minutesArrow.setAttribute('transform', 'rotate('+this.minuteAngle(time)+')');
+                this.secondsArrow.setAttribute('transform', 'rotate('+this.secondAngle(time)+')');
+                
+                for (var angle = 0; angle < 360; angle += this.markStep){
+                    var mark = document.getElementById(this.getMarkId(angle));
+                    if (!mark) continue;
+                    
+                    mark.setAttribute("fill", this.getFillColor(angle, hourAngle));
+                    
+                    var opacity = this.getOpacity(angle, hourAngle);
+                    mark.setAttribute("fill-opacity", opacity);
+                    
+                    var markObj = new Mark(angle);
+                    if (time.getTime() - markObj.update.getTime()){
+                    
+                    }
+                }
+            },
+            
+            hourAngle: function(time){
+                return this.startDeg + this.oneHourAngle * (time.getHours() + time.getMinutes() / 60 + time.getSeconds() / 3600);
+            },
+            
+            minuteAngle: function(time){
+                return this.startDeg + this.oneMinuteAngle * (time.getMinutes() + time.getSeconds() / 60);
+            },
+            
+            secondAngle: function(time){
+                return this.startDeg + this.oneSecondAngle * time.getSeconds();
+            },
+                    
+            normalizeAngle: function(angle){
+                if (angle < 0) angle = 360 - angle % 360;
+                if (angle >= 360) angle = angle % 360;
+                
+                return angle;
+            },
+            
+            createMarks: function(){
+                var clockmarkslive = document.getElementById('clockmarkslive');
+                var thisObj = this;
+    
+                for (var angle = 0; angle < 360; angle += this.markStep){
+                    var gRotate = document.createElementNS(this.xmlns, "g");
+                    var gTranslate = document.createElementNS(this.xmlns, "g");
+                    
+                    var mark = document.createElementNS(this.xmlns, "rect");
+                    var width = 0, height = 0;
+                
+                    if (!(angle % 30)){
+                        mark.setAttribute("class", "mark");
+                        width = 130;
+                        height = 30;
+                    } else {
+                        mark.setAttribute("class", "smallmark");
+                        width = 80;
+                        height = 24;
+                    }
+                    
+                    gTranslate.setAttribute('transform', 'translate(480,0)');
+
+                    mark.setAttribute("x", -width);
+                    mark.setAttribute("y", -Math.floor(height / 2));
+                    mark.setAttribute("width", width);
+                    mark.setAttribute("height", height);
+                    
+                    mark.setAttribute("id", this.getMarkId(angle));
+                    mark.setAttribute("data-angle", angle);
+                    gRotate.setAttribute("transform", "rotate(" + angle + ")");
+                    mark.onmousedown = function(e){
+                        thisObj.markAction(e.target);
+                    };
+                    
+                    gTranslate.appendChild(mark);
+                    gRotate.appendChild(gTranslate);
+                    clockmarkslive.appendChild(gRotate);
+                }
+            },
+            
+            markAction: function(node){
+                var thisObj = this;
+                var angle = node.getAttribute('data-angle');
+                var markObj = new Mark(angle);
+
+                var text = document.getElementById('eventName');
+                text.value = markObj.title;
+                
+                var removeButton = document.getElementById('eventButtonRemove');
+                removeButton.onclick = function(){
+                    thisObj.eventRemoveAction(angle);
+                }
+                
+                var form = document.getElementById('eventForm');
+                form.onsubmit = function(){
+                    thisObj.eventSubmitAction(angle, text.value);
+                    return false;
+                }
+            
+                if (!markObj.checked) markObj.checked = true;
+                markObj.save();
+                this.showTime();
+            
+                var prompt = document.getElementById('eventPrompt');
+                prompt.setAttribute('display', 'inline');
+            },
+            
+            eventRemoveAction: function(angle){
+                this.closeEventPrompt();
+                var markObj = new Mark(angle);
+                markObj.checked = false;
+                markObj.save();
+                this.showTime();
+            },
+            
+            eventSubmitAction: function(angle, title){
+                this.closeEventPrompt();
+                var markObj = new Mark(angle);
+                markObj.checked = true;
+                markObj.title = title;
+                markObj.save();
+                this.showTime();
+            },
+            
+            closeEventPrompt: function(){
+                var prompt = document.getElementById('eventPrompt');
+                prompt.setAttribute('display', 'none');
+            },
+            
+            getFillColor: function(angle, benchmarkAngle){
+                var rgbcolor;
+                var markObj = new Mark(angle);
+                
+                if (!markObj.checked){
+                    rgbcolor = '#eeeeee';
+                } else {
+                    var dist = this.getAngleDistance(angle, benchmarkAngle);
+                
+                    if (dist.positive){
+                        rgbcolor = dist.distance < 45 ? '#ffff00' : '#00ff00'; 
+                    } else {
+                        rgbcolor = '#ff0000';
+                    }
+                }
+                
+                return rgbcolor;
+            },
+            
+            getOpacity: function(angle, benchmarkAngle){
+                var dist = this.getAngleDistance(angle, benchmarkAngle);
+                var opacityStep = dist.positive ? 1 / 300 : 0;
+                var opacity = 1 - dist.distance * opacityStep;
+                return opacity;
+            },
+    
+            getAngleDistance: function(angle, benchmarkAngle){
+                var startAngle = this.normalizeAngle(benchmarkAngle);
+                var isPositive = false;
+                
+                angle -= startAngle;
+                if (angle >= 0){
+                    isPositive = angle <= 300;
+                } else {
+                    isPositive = -angle > 60; 
+                }
+                
+                if (isPositive && angle < 0){
+                    angle += 360;
+                } else {
+                    angle = Math.abs(angle);
+                }
+                
+                return {"positive": isPositive, "distance": angle};
+            }
+        }
+    ]]></script>
+</svg>
+</body>
+</html>
