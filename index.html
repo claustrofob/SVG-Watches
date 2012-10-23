@@ -199,6 +199,8 @@
             var clockface = document.getElementById('clockface');
             this.attachTouchEvents(clockface);
             this.attachMouseEvents(clockface);
+            
+            this.stopMarkTime = false;
         }
         
         Clock.prototype = {
@@ -268,30 +270,38 @@
             },
         
             highlightMark: function(pX, pY){
-                if (this.activeMark){
-                    this.scaleMark(this.activeMark, true);
-                }
-                
                 var x = pX - Math.floor(document.body.clientWidth / 2);
                 var y = pY - Math.floor(document.body.clientHeight / 2);
                 var angle = Math.round(this.calcAngle(0, x, 0, y) / this.markStep) * this.markStep;
                 angle = this.normalizeAngle(angle);
 
                 var mark = document.getElementById(this.getMarkId(angle));
-                if (!mark) return;
+                if (!mark || mark === this.activeMark) return;
+                
+                if (this.activeMark){
+                    this.scaleMark(this.activeMark, true);
+                }
+                
+                this.stopMarkTime = new Date();
                 
                 this.scaleMark(mark);
-                
                 this.activeMark = mark;
             },
         
             stopHighlightMark: function(){
                 if (!this.activeMark) return;
-
                 this.scaleMark(this.activeMark, true);
-                this.markAction(this.activeMark);
-                
+
+                if (this.checkStopDelay(this.stopMarkTime)){
+                    this.markAction(this.activeMark);
+                }
+
                 this.activeMark = null;
+            },
+        
+            checkStopDelay: function(time){
+                var now = new Date();
+                return time && (now.getTime() - time.getTime() >= 200);
             },
         
             scaleMark: function(mark, reset){
