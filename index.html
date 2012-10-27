@@ -200,7 +200,12 @@
             this.attachTouchEvents(clockface);
             this.attachMouseEvents(clockface);
             
-            this.stopMarkTime = false;
+            this.isMarkReady = false;
+            this.stopDelay = 250;
+            this.stopTimeout = null;
+            
+            this.markReadyColor = "#66ff00";
+            this.markActiveColor = "orange";
         }
         
         Clock.prototype = {
@@ -270,6 +275,7 @@
             },
         
             highlightMark: function(pX, pY){
+                var thisObj = this;
                 var x = pX - Math.floor(document.body.clientWidth / 2);
                 var y = pY - Math.floor(document.body.clientHeight / 2);
                 var angle = Math.round(this.calcAngle(0, x, 0, y) / this.markStep) * this.markStep;
@@ -279,43 +285,39 @@
                 if (!mark || mark === this.activeMark) return;
                 
                 if (this.activeMark){
-                    this.scaleMark(this.activeMark, true);
+                    this.toggleMark(this.activeMark, true);
                 }
                 
-                this.stopMarkTime = new Date();
+                if (this.stopTimeout) clearTimeout(this.stopTimeout);
                 
-                this.scaleMark(mark);
+                this.isMarkReady = false;
+                this.stopTimeout = setTimeout(function(){
+                    thisObj.setMarkReady(mark);
+                }, this.stopDelay);
+                
+                this.toggleMark(mark);
                 this.activeMark = mark;
             },
         
             stopHighlightMark: function(){
                 if (!this.activeMark) return;
-                this.scaleMark(this.activeMark, true);
+                this.toggleMark(this.activeMark, true);
 
-                if (this.checkStopDelay(this.stopMarkTime)){
+                if (this.isMarkReady){
                     this.markAction(this.activeMark);
                 }
 
                 this.activeMark = null;
             },
-        
-            checkStopDelay: function(time){
-                var now = new Date();
-                return time && (now.getTime() - time.getTime() >= 150);
+
+            setMarkReady: function(mark){
+                mark.setAttribute("stroke", this.markReadyColor);
+                this.isMarkReady = true;
             },
         
-            scaleMark: function(mark, reset){
-                var scaleX = '1';
-                var scaleY = '1';
-                var strokeWidth = '0';
-                    
-                if (!reset){
-                    scaleX = '1.3';
-                    scaleY = '1.6';
-                    strokeWidth = '3';
-                }
-            
-                mark.setAttribute('transform', 'scale('+scaleX+', '+scaleY+')');
+            toggleMark: function(mark, reset){
+                var strokeWidth = !reset ? '12' : '0';
+                mark.setAttribute("stroke", this.markActiveColor);
                 mark.setAttribute("stroke-width", strokeWidth);
             },
         
@@ -402,7 +404,6 @@
                     mark.setAttribute("y", -Math.floor(height / 2));
                     mark.setAttribute("width", width);
                     mark.setAttribute("height", height);
-                    mark.setAttribute("stroke", "orange");
                     mark.setAttribute("stroke-width", "0");
                     
                     mark.setAttribute("id", this.getMarkId(angle));
