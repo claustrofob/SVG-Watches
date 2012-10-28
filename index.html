@@ -283,11 +283,12 @@
 
                 var mark = document.getElementById(this.getMarkId(angle));
                 if (!mark || mark === this.activeMark) return;
-                if (this.isMarkReady && this.checkAngleThreshold(this.activeMark.getAttribute('data-angle'), angle)){
-                    return;
-                }
                 
                 if (this.activeMark){
+                    if (this.isMarkReady && this.checkAngleThreshold(this.activeMark.getAttribute('data-angle'), angle)){
+                        return;
+                    }
+                    
                     this.toggleMark(this.activeMark, true);
                 }
                 
