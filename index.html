@@ -283,6 +283,9 @@
 
                 var mark = document.getElementById(this.getMarkId(angle));
                 if (!mark || mark === this.activeMark) return;
+                if (this.isMarkReady && this.checkAngleThreshold(this.activeMark.getAttribute('data-angle'), angle)){
+                    return;
+                }
                 
                 if (this.activeMark){
                     this.toggleMark(this.activeMark, true);
@@ -308,6 +311,11 @@
                 }
 
                 this.activeMark = null;
+            },
+
+            checkAngleThreshold: function(angle, checkAngle){
+                var angleDiff = this.normalizeAngle(Math.abs(angle - checkAngle));
+                return angleDiff <= (this.markStep * 3);
             },
 
             setMarkReady: function(mark){
