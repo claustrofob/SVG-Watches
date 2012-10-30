@@ -279,7 +279,7 @@
                 var x = pX - Math.floor(document.body.clientWidth / 2);
                 var y = pY - Math.floor(document.body.clientHeight / 2);
                 var angle = Math.round(this.calcAngle(0, x, 0, y) / this.markStep) * this.markStep;
-                angle = this.normalizeAngle(angle);
+                angle = this.normalizeAngle(angle + 180);
 
                 var mark = document.getElementById(this.getMarkId(angle));
                 if (!mark || mark === this.activeMark) return;
