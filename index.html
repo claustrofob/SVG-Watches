@@ -184,6 +184,91 @@
             }
         }
         
+        function Angle(angle){
+            this.angle = angle;
+        }
+        
+        Angle.prototype = {
+            angle: 0,
+
+            get: function(){
+                return this.angle;
+            },
+            
+            normalized: function(){
+                var angle = this.angle;
+                if (this.angle < 0) angle = 360 - this.angle % 360;
+                if (this.angle >= 360) angle = this.angle % 360;
+                
+                return angle;
+            },
+            
+            distance: function(angle){
+                if (typeof angle !== "object") angle = new Angle(angle);
+
+                var calcAngle = this.angle - angle.normalized();
+                var isPositive = false;
+
+                if (calcAngle >= 0){
+                    isPositive = calcAngle <= 300;
+                } else {
+                    isPositive = -calcAngle > 60; 
+                }
+                
+                if (isPositive && calcAngle < 0){
+                    calcAngle += 360;
+                } else {
+                    calcAngle = Math.abs(angle);
+                }
+                
+                return new Angle(isPositive ? calcAngle : -calcAngle);
+            },
+            
+            toTime: function(){
+                var time = new Date();
+                var hourAngle = Angle.fromTimeHour(time);
+                var milliseconds = this.distance(hourAngle).toMilliseconds();
+                return new Date(time.getTime() + milliseconds);
+            },
+            
+            /**
+             * 12 hours in 360 degrees
+             */
+            toMilliseconds: function(){
+                return 12 * 60 * 60 * 1000 / 360 * this.angle;
+            }
+        }
+
+        Angle.config = {
+            startAngle: 270,
+            oneHourAngle: 30,
+            oneMinuteAngle: 6,
+            oneSecondAngle: 6
+        }
+
+        Angle.fromPoint = function(x1, x2, y1, y2){
+            var angle = Math.atan2(x1-x2,y1-y2)*(180/Math.PI);
+            angle += 90;
+            if(angle < 0){
+                angle = Math.abs(angle);
+            } else {
+                angle = 360 - angle;
+            }
+            return new Angle(angle);
+        }
+        
+        Angle.fromTimeHour = function(time){
+            return new Angle(Angle.config.startAngle + Angle.config.oneHourAngle * (time.getHours() + time.getMinutes() / 60 + time.getSeconds() / 3600));
+        }
+            
+        Angle.fromTimeMinute = function(time){
+            return new Angle(Angle.config.startAngle + Angle.config.oneMinuteAngle * (time.getMinutes() + time.getSeconds() / 60));
+        }
+        
+        Angle.fromTimeSecond = function(time){
+            return new Angle(Angle.config.startAngle + Angle.config.oneSecondAngle * time.getSeconds());
+        }
+        
         function Clock(){
             this.startDeg = 270;
             this.xmlns = "http://www.w3.org/2000/svg";
@@ -217,17 +302,6 @@
         }
         
         Clock.prototype = {
-            calcAngle: function(x1, x2, y1, y2){
-                var calcAngle = Math.atan2(x1-x2,y1-y2)*(180/Math.PI);
-                calcAngle += 90;
-                if(calcAngle < 0){
-                    calcAngle = Math.abs(calcAngle);
-                } else {
-                    calcAngle = 360 - calcAngle;
-                }
-                return calcAngle;
-            },
-        
             attachTouchEvents: function(element){
                 var thisObj = this;
                 var isTouchStart = false;
@@ -286,14 +360,15 @@
                 var thisObj = this;
                 var x = pX - Math.floor(document.body.clientWidth / 2);
                 var y = pY - Math.floor(document.body.clientHeight / 2);
-                var angle = Math.round(this.calcAngle(0, x, 0, y) / this.markStep) * this.markStep;
-                angle = this.normalizeAngle(angle + 180);
+                var angle = Angle.fromPoint(0, x, 0, y);
+                angle = new Angle(Math.round(angle.get() / this.markStep) * this.markStep + 180);
+                angle = new Angle(angle.normalized());
 
-                var mark = document.getElementById(this.getMarkId(angle));
+                var mark = document.getElementById(this.getMarkId(angle.get()));
                 if (!mark || mark === this.activeMark) return;
                 
                 if (this.activeMark){
-                    if (this.isMarkReady && this.checkAngleThreshold(this.activeMark.getAttribute('data-angle'), angle)){
+                    if (this.isMarkReady && this.checkAngleThreshold(this.activeMark.getAttribute('data-angle'), angle.get())){
                         return;
                     }
                     
@@ -353,19 +428,19 @@
             
             showTime: function(){
                 var time = new Date();
-                var hourAngle = this.hourAngle(time);
+                var hourAngle = Angle.fromTimeHour(time);
                 
-                this.hoursArrow.setAttribute('transform', 'rotate('+hourAngle+')');
-                this.minutesArrow.setAttribute('transform', 'rotate('+this.minuteAngle(time)+')');
-                this.secondsArrow.setAttribute('transform', 'rotate('+this.secondAngle(time)+')');
+                this.hoursArrow.setAttribute('transform', 'rotate('+hourAngle.get()+')');
+                this.minutesArrow.setAttribute('transform', 'rotate('+Angle.fromTimeMinute(time).get()+')');
+                this.secondsArrow.setAttribute('transform', 'rotate('+Angle.fromTimeSecond(time).get()+')');
                 
                 for (var angle = 0; angle < 360; angle += this.markStep){
                     var mark = document.getElementById(this.getMarkId(angle));
                     if (!mark) continue;
                     
-                    mark.setAttribute("fill", this.getFillColor(angle, hourAngle));
+                    mark.setAttribute("fill", this.getFillColor(angle, hourAngle.get()));
                     
-                    var opacity = this.getOpacity(angle, hourAngle);
+                    var opacity = this.getOpacity(angle, hourAngle.get());
                     mark.setAttribute("fill-opacity", opacity);
                     
                     var markObj = new Mark(angle);
@@ -373,18 +448,6 @@
                     
                     }
                 }
-            },
-            
-            hourAngle: function(time){
-                return this.startDeg + this.oneHourAngle * (time.getHours() + time.getMinutes() / 60 + time.getSeconds() / 3600);
-            },
-            
-            minuteAngle: function(time){
-                return this.startDeg + this.oneMinuteAngle * (time.getMinutes() + time.getSeconds() / 60);
-            },
-            
-            secondAngle: function(time){
-                return this.startDeg + this.oneSecondAngle * time.getSeconds();
             },
                     
             normalizeAngle: function(angle){
@@ -483,8 +546,8 @@
             
             getAngleTime: function(angle){
                 var time = new Date();
-                var hourAngle = this.hourAngle(time);
-                var dist = this.getAngleDistance(angle, hourAngle);
+                var hourAngle = Angle.fromTimeHour(time);
+                var dist = this.getAngleDistance(angle, hourAngle.get());
                 var sign = dist.positive ? 1 : -1;
                 var milliseconds = this.angleToMilliseconds(dist.distance);
                 return new Date(time.getTime() + sign * milliseconds);
