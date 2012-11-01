@@ -452,7 +452,7 @@
                 this.updateTime();
                 setInterval(function(){
                     thisObj.updateTime();
-                }, 41);
+                }, 100);
                 
                 this.updateMarks();
                 setInterval(function(){
@@ -574,7 +574,7 @@
                 markObj.title = title;
                 markObj.time = angle.toTime();
                 markObj.save();
-                this.showTime();
+                this.updateMarks();
             },
             
             closeEventPrompt: function(){
