@@ -59,8 +59,8 @@
                 <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
             </g>
         </g>
-        <g transform="translate(-400, -200)">
-            <foreignObject id="eventPrompt" width="800" height="400" display="none">
+        <g transform="translate(-400, -230)">
+            <foreignObject id="eventPrompt" width="800" height="460" display="none">
                 <body xmlns="http://www.w3.org/1999/xhtml">
                     <style type="text/css">
                         .info-popup{
@@ -92,9 +92,14 @@
                         .refuse-button{
                             color: #777;
                         }
+                        .time{
+                            font-size: 50px;
+                            font-weight: bold;
+                        }
                     </style>
                     <div class="info-popup">
                         <form id="eventForm" method="post" action="">
+                            <div id="setTime" class="time block"></div>
                             <div class="block input-block">
                                 <textarea id="eventName" class="form-input text" rows="2" placeholder="Wazzap!"></textarea>
                             </div>
@@ -121,6 +126,8 @@
             
             //localStorage.clear();
         }
+        
+        /****************************************************/
         
         function Mark(id){
             this.update = new Date();
@@ -184,6 +191,8 @@
             }
         }
         
+        /****************************************************/
+        
         function Angle(angle){
             this.angle = angle;
         }
@@ -218,7 +227,7 @@
                 if (isPositive && calcAngle < 0){
                     calcAngle += 360;
                 } else {
-                    calcAngle = Math.abs(angle);
+                    calcAngle = Math.abs(calcAngle);
                 }
                 
                 return new Angle(isPositive ? calcAngle : -calcAngle);
@@ -236,6 +245,10 @@
              */
             toMilliseconds: function(){
                 return 12 * 60 * 60 * 1000 / 360 * this.angle;
+            },
+            
+            toString: function(){
+                return this.get();
             }
         }
 
@@ -269,15 +282,12 @@
             return new Angle(Angle.config.startAngle + Angle.config.oneSecondAngle * time.getSeconds());
         }
         
+        /****************************************************/
+        
         function Clock(){
-            this.startDeg = 270;
             this.xmlns = "http://www.w3.org/2000/svg";
             
-            this.oneHourAngle = 30;
-            this.oneMinuteAngle = 6;
-            this.oneSecondAngle = 6;
-            
-            this.markStep = 6;
+            this.markStep = 5;
             
             this.hoursArrow = document.getElementById('hours');
             this.minutesArrow = document.getElementById('minutes');
@@ -358,6 +368,7 @@
         
             highlightMark: function(pX, pY){
                 var thisObj = this;
+                
                 var x = pX - Math.floor(document.body.clientWidth / 2);
                 var y = pY - Math.floor(document.body.clientHeight / 2);
                 var angle = Angle.fromPoint(0, x, 0, y);
@@ -368,7 +379,7 @@
                 if (!mark || mark === this.activeMark) return;
                 
                 if (this.activeMark){
-                    if (this.isMarkReady && this.checkAngleThreshold(this.activeMark.getAttribute('data-angle'), angle.get())){
+                    if (this.isMarkReady && this.checkAngleThreshold(new Angle(this.activeMark.getAttribute('data-angle')), angle)){
                         return;
                     }
                     
@@ -398,8 +409,8 @@
             },
 
             checkAngleThreshold: function(angle, checkAngle){
-                var angleDiff = this.normalizeAngle(Math.abs(angle - checkAngle));
-                return angleDiff <= this.activeMarkThreshold;
+                var angleDiff = new Angle(Math.abs(angle.get() - checkAngle.get()));
+                return angleDiff.normalize() <= this.activeMarkThreshold;
             },
 
             setMarkReady: function(mark){
@@ -435,47 +446,41 @@
                 this.secondsArrow.setAttribute('transform', 'rotate('+Angle.fromTimeSecond(time).get()+')');
                 
                 for (var angle = 0; angle < 360; angle += this.markStep){
-                    var mark = document.getElementById(this.getMarkId(angle));
+                    var oAngle = new Angle(angle);
+                    var mark = document.getElementById(this.getMarkId(oAngle.get()));
                     if (!mark) continue;
                     
-                    mark.setAttribute("fill", this.getFillColor(angle, hourAngle.get()));
+                    mark.setAttribute("fill", this.getFillColor(oAngle, hourAngle));
+                    mark.setAttribute("fill-opacity", this.getOpacity(oAngle, hourAngle));
                     
-                    var opacity = this.getOpacity(angle, hourAngle.get());
-                    mark.setAttribute("fill-opacity", opacity);
-                    
-                    var markObj = new Mark(angle);
+                    var markObj = new Mark(oAngle.get());
                     if (time.getTime() - markObj.time.getTime()){
                     
                     }
                 }
             },
-                    
-            normalizeAngle: function(angle){
-                if (angle < 0) angle = 360 - angle % 360;
-                if (angle >= 360) angle = angle % 360;
-                
-                return angle;
-            },
-            
+
             createMarks: function(){
                 var clockmarkslive = document.getElementById('clockmarkslive');
                 var thisObj = this;
     
                 for (var angle = 0; angle < 360; angle += this.markStep){
+                    var oAngle = new Angle(angle);
+                    
                     var gRotate = document.createElementNS(this.xmlns, "g");
                     var gTranslate = document.createElementNS(this.xmlns, "g");
                     
                     var mark = document.createElementNS(this.xmlns, "rect");
                     var width = 0, height = 0;
                 
-                    if (!(angle % 30)){
+                    if (!(oAngle.get() % Angle.config.oneHourAngle)){
                         mark.setAttribute("class", "mark");
                         width = 130;
-                        height = 30;
+                        height = 24;
                     } else {
                         mark.setAttribute("class", "smallmark");
                         width = 80;
-                        height = 24;
+                        height = 18;
                     }
                     
                     gTranslate.setAttribute('transform', 'translate(480,0)');
@@ -486,9 +491,9 @@
                     mark.setAttribute("height", height);
                     mark.setAttribute("stroke-width", "0");
                     
-                    mark.setAttribute("id", this.getMarkId(angle));
-                    mark.setAttribute("data-angle", angle);
-                    gRotate.setAttribute("transform", "rotate(" + angle + ")");
+                    mark.setAttribute("id", this.getMarkId(oAngle.get()));
+                    mark.setAttribute("data-angle", oAngle.get());
+                    gRotate.setAttribute("transform", "rotate(" + oAngle.get() + ")");
                     
                     gTranslate.appendChild(mark);
                     gRotate.appendChild(gTranslate);
@@ -498,13 +503,14 @@
             
             markAction: function(node){
                 var thisObj = this;
-                var angle = node.getAttribute('data-angle');
-                var markObj = new Mark(angle);
+                var angle = new Angle(node.getAttribute('data-angle'));
+                var markObj = new Mark(angle.get());
 
-                var text = document.getElementById('eventName');
-                text.value = markObj.title;
-                
-                var angleTime = this.getAngleTime(angle);
+                var timeNode = document.getElementById('setTime');
+                timeNode.innerHTML = this.formatTime(angle.toTime());
+
+                var textNode = document.getElementById('eventName');
+                textNode.value = markObj.title;
                 
                 var removeButton = document.getElementById('eventButtonRemove');
                 removeButton.onclick = function(){
@@ -513,7 +519,7 @@
                 
                 var form = document.getElementById('eventForm');
                 form.onsubmit = function(){
-                    thisObj.eventSubmitAction(angle, text.value, angleTime);
+                    thisObj.eventSubmitAction(angle, textNode.value);
                     return false;
                 }
             
@@ -527,37 +533,21 @@
             
             eventRemoveAction: function(angle){
                 this.closeEventPrompt();
-                var markObj = new Mark(angle);
+                var markObj = new Mark(angle.get());
                 markObj.checked = false;
                 markObj.save();
                 this.showTime();
             },
             
-            eventSubmitAction: function(angle, title, angleTime){
+            eventSubmitAction: function(angle, title){
                 this.closeEventPrompt();
                 
-                var markObj = new Mark(angle);
+                var markObj = new Mark(angle.get());
                 markObj.checked = true;
                 markObj.title = title;
-                markObj.time = angleTime;
+                markObj.time = angle.toTime();
                 markObj.save();
                 this.showTime();
-            },
-            
-            getAngleTime: function(angle){
-                var time = new Date();
-                var hourAngle = Angle.fromTimeHour(time);
-                var dist = this.getAngleDistance(angle, hourAngle.get());
-                var sign = dist.positive ? 1 : -1;
-                var milliseconds = this.angleToMilliseconds(dist.distance);
-                return new Date(time.getTime() + sign * milliseconds);
-            },
-            
-            /**
-             * 12 hours in 360 degrees
-             */
-            angleToMilliseconds: function(angle){
-                return 12 * 60 * 60 * 1000 / 360 * angle;
             },
             
             closeEventPrompt: function(){
@@ -565,17 +555,21 @@
                 prompt.setAttribute('display', 'none');
             },
             
+            formatTime: function(date){
+                return date.getHours()+':'+date.getMinutes();
+            },
+            
             getFillColor: function(angle, benchmarkAngle){
                 var rgbcolor;
-                var markObj = new Mark(angle);
+                var markObj = new Mark(angle.get());
                 
                 if (!markObj.checked){
                     rgbcolor = '#eeeeee';
                 } else {
-                    var dist = this.getAngleDistance(angle, benchmarkAngle);
+                    var dist = angle.distance(benchmarkAngle);
                 
-                    if (dist.positive){
-                        rgbcolor = dist.distance < 45 ? '#ffff00' : '#00ff00'; 
+                    if (dist.get() > 0){
+                        rgbcolor = dist.get() < 45 ? '#ffff00' : '#00ff00'; 
                     } else {
                         rgbcolor = '#ff0000';
                     }
@@ -585,30 +579,10 @@
             },
             
             getOpacity: function(angle, benchmarkAngle){
-                var dist = this.getAngleDistance(angle, benchmarkAngle);
-                var opacityStep = dist.positive ? /*1 / 300*/0 : 1 / 55;
-                var opacity = 1 - dist.distance * opacityStep;
+                var dist = angle.distance(benchmarkAngle);
+                var opacityStep = dist.get() > 0 ? /*1 / 300*/0 : 1 / 55;
+                var opacity = 1 - Math.abs(dist.get()) * opacityStep;
                 return opacity;
-            },
-    
-            getAngleDistance: function(angle, benchmarkAngle){
-                var startAngle = this.normalizeAngle(benchmarkAngle);
-                var isPositive = false;
-                
-                angle -= startAngle;
-                if (angle >= 0){
-                    isPositive = angle <= 300;
-                } else {
-                    isPositive = -angle > 60; 
-                }
-                
-                if (isPositive && angle < 0){
-                    angle += 360;
-                } else {
-                    angle = Math.abs(angle);
-                }
-                
-                return {"positive": isPositive, "distance": angle};
             }
         }
     ]]></script>
