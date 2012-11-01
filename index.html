@@ -58,6 +58,10 @@
                 <circle cx="0" cy="0" r="13"/>
                 <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
             </g>
+            <g id="speedTimeBlock" display="none">
+                <circle cx="0" cy="0" r="200" fill="#777" />
+                <text id="speedTime" x="0" y="40" font-size="140" fill="#eee" text-anchor="middle"></text>
+            </g>
         </g>
         <g transform="translate(-400, -230)">
             <foreignObject id="eventPrompt" width="800" height="460" display="none">
@@ -279,7 +283,7 @@
         }
         
         Angle.fromTimeSecond = function(time){
-            return new Angle(Angle.config.startAngle + Angle.config.oneSecondAngle * time.getSeconds());
+            return new Angle(Angle.config.startAngle + Angle.config.oneSecondAngle * (time.getSeconds() + time.getMilliseconds() / 1000));
         }
         
         /****************************************************/
@@ -309,6 +313,9 @@
             this.markActiveColor = "orange";
             
             this.activeMarkThreshold = this.markStep * 2;
+            
+            this.speedTimeBlock = document.getElementById('speedTimeBlock');
+            this.speedTime = document.getElementById('speedTime');
         }
         
         Clock.prototype = {
@@ -364,6 +371,7 @@
         
             startHighlightMark: function(){
                 this.activeMark = null;
+                this.speedTimeBlock.setAttribute('display', 'inline');
             },
         
             highlightMark: function(pX, pY){
@@ -395,6 +403,15 @@
                 
                 this.toggleMark(mark);
                 this.activeMark = mark;
+                
+                var textTime = this.formatTime(angle.toTime());
+                var textNode = document.createTextNode(textTime);
+                
+                var children = this.speedTime.childNodes;
+                while(children.length) {
+                    this.speedTime.removeChild(children[0]);
+                }
+                this.speedTime.appendChild(textNode);
             },
         
             stopHighlightMark: function(){
@@ -406,11 +423,12 @@
                 }
 
                 this.activeMark = null;
+                this.speedTimeBlock.setAttribute('display', 'none');
             },
 
             checkAngleThreshold: function(angle, checkAngle){
                 var angleDiff = new Angle(Math.abs(angle.get() - checkAngle.get()));
-                return angleDiff.normalize() <= this.activeMarkThreshold;
+                return angleDiff.normalized() <= this.activeMarkThreshold;
             },
 
             setMarkReady: function(mark){
@@ -431,19 +449,28 @@
             start: function(){
                 var thisObj = this;
             
-                this.showTime();
+                this.updateTime();
                 setInterval(function(){
-                    thisObj.showTime();
-                }, 1000);
+                    thisObj.updateTime();
+                }, 41);
+                
+                this.updateMarks();
+                setInterval(function(){
+                    thisObj.updateMarks();
+                }, 60000);
             },
             
-            showTime: function(){
+            updateTime: function(){
                 var time = new Date();
-                var hourAngle = Angle.fromTimeHour(time);
                 
-                this.hoursArrow.setAttribute('transform', 'rotate('+hourAngle.get()+')');
+                this.hoursArrow.setAttribute('transform', 'rotate('+Angle.fromTimeHour(time).get()+')');
                 this.minutesArrow.setAttribute('transform', 'rotate('+Angle.fromTimeMinute(time).get()+')');
                 this.secondsArrow.setAttribute('transform', 'rotate('+Angle.fromTimeSecond(time).get()+')');
+            },
+            
+            updateMarks: function(){
+                var time = new Date();
+                var hourAngle = Angle.fromTimeHour(time);
                 
                 for (var angle = 0; angle < 360; angle += this.markStep){
                     var oAngle = new Angle(angle);
@@ -525,7 +552,7 @@
             
                 if (!markObj.checked) markObj.checked = true;
                 markObj.save();
-                this.showTime();
+                this.updateMarks();
             
                 var prompt = document.getElementById('eventPrompt');
                 prompt.setAttribute('display', 'inline');
@@ -536,7 +563,7 @@
                 var markObj = new Mark(angle.get());
                 markObj.checked = false;
                 markObj.save();
-                this.showTime();
+                this.updateMarks();
             },
             
             eventSubmitAction: function(angle, title){
@@ -556,7 +583,9 @@
             },
             
             formatTime: function(date){
-                return date.getHours()+':'+date.getMinutes();
+                var hours = date.getHours() + '';
+                var minutes = date.getMinutes() + '';
+                return (hours.length < 2 ? '0' : '') + hours + ':' + (minutes.length < 2 ? '0' : '') + minutes;
             },
             
             getFillColor: function(angle, benchmarkAngle){
