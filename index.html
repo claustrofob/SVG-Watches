@@ -208,9 +208,23 @@
                 return this.angle;
             },
             
+            set: function(angle){
+                angle += "";
+                this.angle = angle * 1;
+            },
+            
+            add: function(angle){
+                angle += "";
+                this.angle += angle * 1;
+            },
+            
+            normalize: function(){
+                this.angle = this.normalized();
+            },
+            
             normalized: function(){
                 var angle = this.angle;
-                if (this.angle < 0) angle = 360 - this.angle % 360;
+                if (this.angle < 0) angle = 360 + this.angle % 360;
                 if (this.angle >= 360) angle = this.angle % 360;
                 
                 return angle;
@@ -219,21 +233,19 @@
             distance: function(angle){
                 if (typeof angle !== "object") angle = new Angle(angle);
 
-                var calcAngle = this.angle - angle.normalized();
+                var calcAngle = this.normalized() - angle.normalized();
                 var isPositive = false;
 
                 if (calcAngle >= 0){
                     isPositive = calcAngle <= 300;
+                    if (!isPositive) calcAngle = 360 - calcAngle;
                 } else {
-                    isPositive = -calcAngle > 60; 
+                    isPositive = -calcAngle > 60;
+                    if (isPositive) calcAngle += 360;
                 }
                 
-                if (isPositive && calcAngle < 0){
-                    calcAngle += 360;
-                } else {
-                    calcAngle = Math.abs(calcAngle);
-                }
-                
+                calcAngle = Math.abs(calcAngle);
+
                 return new Angle(isPositive ? calcAngle : -calcAngle);
             },
             
@@ -264,6 +276,9 @@
         }
 
         Angle.fromPoint = function(x1, x2, y1, y2){
+            x2 = x2 - Math.floor(document.body.clientWidth / 2);
+            y2 = y2 - Math.floor(document.body.clientHeight / 2);
+        
             var angle = Math.atan2(x1-x2,y1-y2)*(180/Math.PI);
             angle += 90;
             if(angle < 0){
@@ -275,15 +290,18 @@
         }
         
         Angle.fromTimeHour = function(time){
-            return new Angle(Angle.config.startAngle + Angle.config.oneHourAngle * (time.getHours() + time.getMinutes() / 60 + time.getSeconds() / 3600));
+            var angle = new Angle(Angle.config.startAngle + Angle.config.oneHourAngle * (time.getHours() + time.getMinutes() / 60 + time.getSeconds() / 3600));
+            return new Angle(angle.normalized());
         }
             
         Angle.fromTimeMinute = function(time){
-            return new Angle(Angle.config.startAngle + Angle.config.oneMinuteAngle * (time.getMinutes() + time.getSeconds() / 60));
+            var angle = new Angle(Angle.config.startAngle + Angle.config.oneMinuteAngle * (time.getMinutes() + time.getSeconds() / 60));
+            return new Angle(angle.normalized());
         }
         
         Angle.fromTimeSecond = function(time){
-            return new Angle(Angle.config.startAngle + Angle.config.oneSecondAngle * (time.getSeconds() + time.getMilliseconds() / 1000));
+            var angle = new Angle(Angle.config.startAngle + Angle.config.oneSecondAngle * (time.getSeconds() + time.getMilliseconds() / 1000));
+            return new Angle(angle.normalized());
         }
         
         /****************************************************/
@@ -306,7 +324,7 @@
             this.attachMouseEvents(clockface);
             
             this.isMarkReady = false;
-            this.stopDelay = 750;//milliseconds
+            this.stopDelay = 150;//milliseconds
             this.stopTimeout = null;
             
             this.markReadyColor = "#66ff00";
@@ -316,6 +334,11 @@
             
             this.speedTimeBlock = document.getElementById('speedTimeBlock');
             this.speedTime = document.getElementById('speedTime');
+            
+            this.touchStartAngle = null;
+            this.currentAngle = null;
+            
+            this.moveSpeed = 1/2;
         }
         
         Clock.prototype = {
@@ -326,8 +349,9 @@
                 element.ontouchstart = function(e){
                     e.preventDefault();
                     isTouchStart = true;
-                    thisObj.startHighlightMark();
+                    
                     var touch = e.touches[0];
+                    thisObj.startHighlightMark(touch.pageX, touch.pageY);
                     thisObj.highlightMark(touch.pageX, touch.pageY);
                 }
                 
@@ -352,7 +376,8 @@
                 element.onmousedown = function(e){
                     e.preventDefault();
                     isMouseDown = true;
-                    thisObj.startHighlightMark();
+
+                    thisObj.startHighlightMark(e.pageX, e.pageY);
                     thisObj.highlightMark(e.pageX, e.pageY);
                 }
                 
@@ -369,28 +394,33 @@
                 }
             },
         
-            startHighlightMark: function(){
+            startHighlightMark: function(x, y){
+                this.touchStartAngle = Angle.fromPoint(0, x, 0, y);
+                this.currentAngle = new Angle(this.touchStartAngle.get());
                 this.activeMark = null;
                 this.speedTimeBlock.setAttribute('display', 'inline');
             },
         
-            highlightMark: function(pX, pY){
+            highlightMark: function(x, y){
                 var thisObj = this;
                 
-                var x = pX - Math.floor(document.body.clientWidth / 2);
-                var y = pY - Math.floor(document.body.clientHeight / 2);
                 var angle = Angle.fromPoint(0, x, 0, y);
-                angle = new Angle(Math.round(angle.get() / this.markStep) * this.markStep + 180);
-                angle = new Angle(angle.normalized());
+                var diffAngle = angle.get() - this.currentAngle.normalized();
+                if (Math.abs(diffAngle) > 180) {
+                    var sign = diffAngle <= 0 ? 1 : -1;
+                    diffAngle = (360 - Math.abs(diffAngle)) * sign;
+                }
+                
+                this.currentAngle.add(diffAngle);
+
+                angle.set(this.touchStartAngle.get() + (this.currentAngle.get() - this.touchStartAngle.get()) * this.moveSpeed);
+                angle.set(Math.round(angle.get() / this.markStep) * this.markStep + 180);
+                angle.normalize();
 
                 var mark = document.getElementById(this.getMarkId(angle.get()));
                 if (!mark || mark === this.activeMark) return;
                 
                 if (this.activeMark){
-                    if (this.isMarkReady && this.checkAngleThreshold(new Angle(this.activeMark.getAttribute('data-angle')), angle)){
-                        return;
-                    }
-                    
                     this.toggleMark(this.activeMark, true);
                 }
                 
@@ -425,14 +455,8 @@
                 this.activeMark = null;
                 this.speedTimeBlock.setAttribute('display', 'none');
             },
-
-            checkAngleThreshold: function(angle, checkAngle){
-                var angleDiff = new Angle(Math.abs(angle.get() - checkAngle.get()));
-                return angleDiff.normalized() <= this.activeMarkThreshold;
-            },
-
+            
             setMarkReady: function(mark){
-                mark.setAttribute("stroke", this.markReadyColor);
                 this.isMarkReady = true;
             },
         
@@ -452,7 +476,7 @@
                 this.updateTime();
                 setInterval(function(){
                     thisObj.updateTime();
-                }, 100);
+                }, 1000);
                 
                 this.updateMarks();
                 setInterval(function(){
@@ -609,7 +633,7 @@
             
             getOpacity: function(angle, benchmarkAngle){
                 var dist = angle.distance(benchmarkAngle);
-                var opacityStep = dist.get() > 0 ? /*1 / 300*/0 : 1 / 55;
+                var opacityStep = dist.get() > 0 ? 0 : 1 / 55;
                 var opacity = 1 - Math.abs(dist.get()) * opacityStep;
                 return opacity;
             }
