@@ -63,8 +63,8 @@
                 <text id="speedTime" x="0" y="40" font-size="140" fill="#eee" text-anchor="middle"></text>
             </g>
         </g>
-        <g transform="translate(-400, -230)">
-            <foreignObject id="eventPrompt" width="800" height="460" display="none">
+        <g transform="translate(-400, -235)">
+            <foreignObject id="eventPrompt" width="800" height="470" display="none">
                 <body xmlns="http://www.w3.org/1999/xhtml">
                     <style type="text/css">
                         .info-popup{
@@ -224,8 +224,8 @@
             
             normalized: function(){
                 var angle = this.angle;
-                if (this.angle < 0) angle = 360 + this.angle % 360;
-                if (this.angle >= 360) angle = this.angle % 360;
+                if (angle < 0) angle = 360 + angle % 360;
+                if (angle >= 360) angle = angle % 360;
                 
                 return angle;
             },
@@ -324,7 +324,7 @@
             this.attachMouseEvents(clockface);
             
             this.isMarkReady = false;
-            this.stopDelay = 150;//milliseconds
+            this.stopDelay = 200;//milliseconds
             this.stopTimeout = null;
             
             this.markReadyColor = "#66ff00";
@@ -338,7 +338,7 @@
             this.touchStartAngle = null;
             this.currentAngle = null;
             
-            this.moveSpeed = 1/2;
+            this.moveSpeed = 1/3;
         }
         
         Clock.prototype = {
@@ -496,18 +496,23 @@
                 var time = new Date();
                 var hourAngle = Angle.fromTimeHour(time);
                 
+                var testTime = (new Angle(60)).toMilliseconds();
+                
                 for (var angle = 0; angle < 360; angle += this.markStep){
                     var oAngle = new Angle(angle);
                     var mark = document.getElementById(this.getMarkId(oAngle.get()));
                     if (!mark) continue;
                     
-                    mark.setAttribute("fill", this.getFillColor(oAngle, hourAngle));
-                    mark.setAttribute("fill-opacity", this.getOpacity(oAngle, hourAngle));
-                    
                     var markObj = new Mark(oAngle.get());
-                    if (time.getTime() - markObj.time.getTime()){
-                    
+                    if (time.getTime() - markObj.time.getTime() > testTime){
+                        markObj.checked = false;
+                        markObj.save();
                     }
+                    
+                    var distance = oAngle.distance(hourAngle);
+                    
+                    mark.setAttribute("fill", this.getFillColor(markObj, distance));
+                    mark.setAttribute("fill-opacity", this.getOpacity(distance));
                 }
             },
 
@@ -574,7 +579,7 @@
                     return false;
                 }
             
-                if (!markObj.checked) markObj.checked = true;
+                markObj.checked = true;
                 markObj.save();
                 this.updateMarks();
             
@@ -612,15 +617,12 @@
                 return (hours.length < 2 ? '0' : '') + hours + ':' + (minutes.length < 2 ? '0' : '') + minutes;
             },
             
-            getFillColor: function(angle, benchmarkAngle){
+            getFillColor: function(markObj, dist){
                 var rgbcolor;
-                var markObj = new Mark(angle.get());
                 
                 if (!markObj.checked){
                     rgbcolor = '#eeeeee';
                 } else {
-                    var dist = angle.distance(benchmarkAngle);
-                
                     if (dist.get() > 0){
                         rgbcolor = dist.get() < 45 ? '#ffff00' : '#00ff00'; 
                     } else {
@@ -631,8 +633,7 @@
                 return rgbcolor;
             },
             
-            getOpacity: function(angle, benchmarkAngle){
-                var dist = angle.distance(benchmarkAngle);
+            getOpacity: function(dist){
                 var opacityStep = dist.get() > 0 ? 0 : 1 / 55;
                 var opacity = 1 - Math.abs(dist.get()) * opacityStep;
                 return opacity;
