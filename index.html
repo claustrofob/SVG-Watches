@@ -367,6 +367,12 @@
             on: function(event, callback){
                 event = "on" + event;
                 this.getNode()[event] = callback;
+            },
+            
+            transform: function(type){
+                var args = Array.prototype.slice.call(arguments);
+                var strArgs = args.slice(1).join(",");
+                this.attr("transform", type + "(" + strArgs + ")");
             }
         }
         
@@ -436,6 +442,8 @@
             
                 element.on("touchstart", function(e){
                     e.preventDefault();
+                    
+                    if (isTouchStart) return;
                     isTouchStart = true;
                     
                     var touch = e.touches[0];
@@ -463,6 +471,8 @@
             
                 element.on("mousedown", function(e){
                     e.preventDefault();
+                    
+                    if (isMouseDown) return;
                     isMouseDown = true;
 
                     thisObj.startHighlightMark(e.pageX, e.pageY);
@@ -506,7 +516,7 @@
 
                 var mark = Element.find(this.getMarkId(angle.get()));
                 if (!mark || (this.activeMark && mark.attr('data-angle') == this.activeMark.attr('data-angle'))) return;
-                console.log(1);
+
                 if (this.activeMark){
                     this.toggleMark(this.activeMark, true);
                 }
@@ -579,9 +589,9 @@
             updateTime: function(){
                 var time = new Date();
                 
-                this.hoursArrow.attr('transform', 'rotate('+Angle.fromTimeHour(time).get()+')');
-                this.minutesArrow.attr('transform', 'rotate('+Angle.fromTimeMinute(time).get()+')');
-                this.secondsArrow.attr('transform', 'rotate('+Angle.fromTimeSecond(time).get()+')');
+                this.hoursArrow.transform("rotate", Angle.fromTimeHour(time).get());
+                this.minutesArrow.transform("rotate", Angle.fromTimeMinute(time).get());
+                this.secondsArrow.transform("rotate", Angle.fromTimeSecond(time).get());
             },
             
             updateMarks: function(){
@@ -643,10 +653,10 @@
                     });
                     
                     var gRotate = Element.create("g");
-                    gRotate.attr("transform", "rotate(" + oAngle.get() + ")");
+                    gRotate.transform("rotate", oAngle.get());
                     
                     var gTranslate = Element.create("g");
-                    gTranslate.attr('transform', 'translate(480,0)');
+                    gTranslate.transform("translate", 480, 0);
                     
                     gTranslate.append(mark);
                     gRotate.append(gTranslate);
