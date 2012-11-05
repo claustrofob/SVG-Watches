@@ -505,8 +505,8 @@
                 angle.normalize();
 
                 var mark = Element.find(this.getMarkId(angle.get()));
-                if (!mark || mark === this.activeMark) return;
-                
+                if (!mark || (this.activeMark && mark.attr('data-angle') == this.activeMark.attr('data-angle'))) return;
+                console.log(1);
                 if (this.activeMark){
                     this.toggleMark(this.activeMark, true);
                 }
