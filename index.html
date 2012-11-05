@@ -44,6 +44,7 @@
         ]]></style>
     </defs>
     <circle id="clearButton" cx="900" cy="100" r="50" fill="#777" />
+    <circle id="reloadButton" cx="100" cy="900" r="50" fill="#777" />
     <g transform="translate(500, 500)">
         <g id="clockface">
             <circle cx="0" cy="0" r="494" stroke="#000" fill="#222" stroke-width="6" />
@@ -290,37 +291,116 @@
         
         Angle.fromTimeHour = function(time){
             var angle = new Angle(Angle.config.startAngle + Angle.config.oneHourAngle * (time.getHours() + time.getMinutes() / 60 + time.getSeconds() / 3600));
-            return new Angle(angle.normalized());
+            angle.normalize();
+            return angle;
         }
             
         Angle.fromTimeMinute = function(time){
             var angle = new Angle(Angle.config.startAngle + Angle.config.oneMinuteAngle * (time.getMinutes() + time.getSeconds() / 60));
-            return new Angle(angle.normalized());
+            angle.normalize();
+            return angle;
         }
         
         Angle.fromTimeSecond = function(time){
             var angle = new Angle(Angle.config.startAngle + Angle.config.oneSecondAngle * (time.getSeconds() + time.getMilliseconds() / 1000));
-            return new Angle(angle.normalized());
+            angle.normalize();
+            return angle;
+        }
+        
+        /****************************************************/
+        
+        function Element(node){
+            if (!node) throw new Error("DOM element required");
+            this.node = node;
+        }
+        
+        Element.prototype = {
+            getNode: function(){
+                return this.node;
+            },
+        
+            append: function(element){
+                this.getNode().appendChild(element.getNode());
+            },
+            
+            appendTo: function(element){
+                element.getNode().appendChild(this.getNode());
+            },
+            
+            attr: function(attr, value){
+                if (typeof attr !== "object"){
+                    if (value === undefined){
+                        return this.getNode().getAttribute(attr);
+                    }
+                    
+                    var attrName = attr;
+                    attr = {};
+                    attr[attrName] = value;
+                }
+                
+                for (var x in attr){
+                    this.node.setAttribute(x, attr[x]);
+                }
+            },
+            
+            html: function(html){
+                this.getNode().innerHTML = html;
+            },
+            
+            text: function(text){
+                var textNode = document.createTextNode(text);
+                
+                var children = this.getNode().childNodes;
+                while(children.length) {
+                    this.getNode().removeChild(children[0]);
+                }
+                this.getNode().appendChild(textNode);
+            },
+            
+            val: function(value){
+                if (value === undefined){
+                    return this.getNode().value;
+                }
+                this.getNode().value = value;
+            },
+            
+            on: function(event, callback){
+                event = "on" + event;
+                this.getNode()[event] = callback;
+            }
+        }
+        
+        Element.xmlns = "http://www.w3.org/2000/svg";
+        
+        Element.create = function(tag){
+            var node = document.createElementNS(Element.xmlns, tag);
+            return new Element(node);
+        }
+        
+        Element.find = function(id){
+            var node = document.getElementById(id);
+            if (!node) return false;
+            
+            return new Element(node);
         }
         
         /****************************************************/
         
         function Clock(){
-            this.xmlns = "http://www.w3.org/2000/svg";
-            
             this.markStep = 5;
             
-            this.hoursArrow = document.getElementById('hours');
-            this.minutesArrow = document.getElementById('minutes');
-            this.secondsArrow = document.getElementById('seconds');
+            this.hoursArrow = Element.find('hours');
+            this.minutesArrow = Element.find('minutes');
+            this.secondsArrow = Element.find('seconds');
             
             this.createMarks();
             
             this.activeMark = null;
             
-            var clockface = document.getElementById('clockface');
-            this.attachTouchEvents(clockface);
-            this.attachMouseEvents(clockface);
+            var clockface = Element.find('clockface');
+            var body = new Element(document.body);
+            this.attachTouchEvents(clockface, body);
+            this.attachMouseEvents(clockface, body);
             
             this.isMarkReady = false;
             this.stopDelay = 200;//milliseconds
@@ -329,82 +409,84 @@
             this.markReadyColor = "#66ff00";
             this.markActiveColor = "orange";
             
-            this.activeMarkThreshold = this.markStep * 2;
-            
-            this.speedTimeBlock = document.getElementById('speedTimeBlock');
-            this.speedTime = document.getElementById('speedTime');
+            this.speedTimeBlock = Element.find('speedTimeBlock');
+            this.speedTime = Element.find('speedTime')
             
             this.touchStartAngle = null;
             this.currentAngle = null;
             
-            this.moveSpeed = 1/3;
+            this.moveSpeed = 1/4;
             
             var thisObj = this;
-            document.getElementById('clearButton').onclick = function(e){
+            Element.find('clearButton').on("click", function(e){
                 e.preventDefault();
                 localStorage.clear();
                 thisObj.updateMarks();
-            }
+            });
+            
+            Element.find('reloadButton').on("click", function(e){
+                e.preventDefault();
+                alert('Reload data. Coming soon...');
+            });
         }
         
         Clock.prototype = {
-            attachTouchEvents: function(element){
+            attachTouchEvents: function(element, body){
                 var thisObj = this;
                 var isTouchStart = false;
             
-                element.ontouchstart = function(e){
+                element.on("touchstart", function(e){
                     e.preventDefault();
                     isTouchStart = true;
                     
                     var touch = e.touches[0];
                     thisObj.startHighlightMark(touch.pageX, touch.pageY);
                     thisObj.highlightMark(touch.pageX, touch.pageY);
-                }
+                });
                 
-                document.body.ontouchmove = function(e){
+                body.on("touchmove", function(e){
                     e.preventDefault();
                     if (isTouchStart){
                         var touch = e.touches[0];
                         thisObj.highlightMark(touch.pageX, touch.pageY);
                     }
-                }
+                });
                 
-                document.body.ontouchend = function(){
+                body.on("touchend", function(){
                     isTouchStart = false;
                     thisObj.stopHighlightMark();
-                }
+                });
             },
         
-            attachMouseEvents: function(element){
+            attachMouseEvents: function(element, body){
                 var thisObj = this;
                 var isMouseDown = false;
             
-                element.onmousedown = function(e){
+                element.on("mousedown", function(e){
                     e.preventDefault();
                     isMouseDown = true;
 
                     thisObj.startHighlightMark(e.pageX, e.pageY);
                     thisObj.highlightMark(e.pageX, e.pageY);
-                }
+                });
                 
-                document.body.onmousemove = function(e){
+                body.on("mousemove", function(e){
                     e.preventDefault();
                     if (isMouseDown){
                         thisObj.highlightMark(e.pageX, e.pageY);
                     }
-                }
+                });
                 
-                document.body.onmouseup = function(){
+                body.on("mouseup", function(){
                     isMouseDown = false;
                     thisObj.stopHighlightMark();
-                }
+                });
             },
         
             startHighlightMark: function(x, y){
                 this.touchStartAngle = Angle.fromPoint(0, x, 0, y);
                 this.currentAngle = new Angle(this.touchStartAngle.get());
                 this.activeMark = null;
-                this.speedTimeBlock.setAttribute('display', 'inline');
             },
         
             highlightMark: function(x, y){
@@ -423,7 +505,7 @@
                 angle.set(Math.round(angle.get() / this.markStep) * this.markStep + 180);
                 angle.normalize();
 
-                var mark = document.getElementById(this.getMarkId(angle.get()));
+                var mark = Element.find(this.getMarkId(angle.get()));
                 if (!mark || mark === this.activeMark) return;
                 
                 if (this.activeMark){
@@ -440,14 +522,7 @@
                 this.toggleMark(mark);
                 this.activeMark = mark;
                 
-                var textTime = this.formatTime(angle.toTime());
-                var textNode = document.createTextNode(textTime);
-                
-                var children = this.speedTime.childNodes;
-                while(children.length) {
-                    this.speedTime.removeChild(children[0]);
-                }
-                this.speedTime.appendChild(textNode);
+                this.showSpeedTime(angle);
             },
         
             stopHighlightMark: function(){
@@ -459,7 +534,7 @@
                 }
 
                 this.activeMark = null;
-                this.speedTimeBlock.setAttribute('display', 'none');
+                this.hideSpeedTime();
             },
             
             setMarkReady: function(mark){
@@ -468,8 +543,20 @@
         
             toggleMark: function(mark, reset){
                 var strokeWidth = !reset ? '12' : '0';
-                mark.setAttribute("stroke", this.markActiveColor);
-                mark.setAttribute("stroke-width", strokeWidth);
+                mark.attr({
+                    "stroke": this.markActiveColor,
+                    "stroke-width": strokeWidth
+                });
+            },
+        
+            showSpeedTime: function(angle){
+                var textTime = this.formatTime(angle.toTime());
+                this.speedTime.text(textTime);
+                this.speedTimeBlock.attr('display', 'inline');
+            },
+        
+            hideSpeedTime: function(){
+                this.speedTimeBlock.attr('display', 'none');
             },
         
             getMarkId: function(id){
@@ -493,9 +580,9 @@
             updateTime: function(){
                 var time = new Date();
                 
-                this.hoursArrow.setAttribute('transform', 'rotate('+Angle.fromTimeHour(time).get()+')');
-                this.minutesArrow.setAttribute('transform', 'rotate('+Angle.fromTimeMinute(time).get()+')');
-                this.secondsArrow.setAttribute('transform', 'rotate('+Angle.fromTimeSecond(time).get()+')');
+                this.hoursArrow.attr('transform', 'rotate('+Angle.fromTimeHour(time).get()+')');
+                this.minutesArrow.attr('transform', 'rotate('+Angle.fromTimeMinute(time).get()+')');
+                this.secondsArrow.attr('transform', 'rotate('+Angle.fromTimeSecond(time).get()+')');
             },
             
             updateMarks: function(){
@@ -506,8 +593,6 @@
                 
                 for (var angle = 0; angle < 360; angle += this.markStep){
                     var oAngle = new Angle(angle);
-                    var mark = document.getElementById(this.getMarkId(oAngle.get()));
-                    if (!mark) continue;
                     
                     var markObj = new Mark(oAngle.get());
                     if (time.getTime() - markObj.time.getTime() > testTime){
@@ -515,82 +600,89 @@
                         markObj.save();
                     }
                     
+                    var mark = Element.find(this.getMarkId(oAngle.get()));
+                    if (!mark) continue;
+                    
                     var distance = oAngle.distance(hourAngle);
                     
-                    mark.setAttribute("fill", this.getFillColor(markObj, distance));
-                    mark.setAttribute("fill-opacity", this.getOpacity(distance));
+                    mark.attr({
+                        "fill": this.getFillColor(markObj, distance),
+                        "fill-opacity": this.getOpacity(distance)
+                    });
                 }
             },
 
             createMarks: function(){
-                var clockmarkslive = document.getElementById('clockmarkslive');
+                var clockmarkslive = Element.find('clockmarkslive');
                 var thisObj = this;
     
                 for (var angle = 0; angle < 360; angle += this.markStep){
                     var oAngle = new Angle(angle);
                     
-                    var gRotate = document.createElementNS(this.xmlns, "g");
-                    var gTranslate = document.createElementNS(this.xmlns, "g");
-                    
-                    var mark = document.createElementNS(this.xmlns, "rect");
-                    var width = 0, height = 0;
+                    var width = 0, height = 0, className = "";
                 
                     if (!(oAngle.get() % Angle.config.oneHourAngle)){
-                        mark.setAttribute("class", "mark");
+                        className = "mark";
                         width = 130;
                         height = 24;
                     } else {
-                        mark.setAttribute("class", "smallmark");
+                        className = "smallmark";
                         width = 80;
                         height = 18;
                     }
                     
-                    gTranslate.setAttribute('transform', 'translate(480,0)');
-
-                    mark.setAttribute("x", -width);
-                    mark.setAttribute("y", -Math.floor(height / 2));
-                    mark.setAttribute("width", width);
-                    mark.setAttribute("height", height);
-                    mark.setAttribute("stroke-width", "0");
+                    var mark = Element.create("rect");
+                    mark.attr({
+                        "class": className,
+                        "x": -width,
+                        "y": -Math.floor(height / 2),
+                        "width": width,
+                        "height": height,
+                        "stroke-width": "0",
+                        "id": this.getMarkId(oAngle.get()),
+                        "data-angle": oAngle.get()
+                    });
                     
-                    mark.setAttribute("id", this.getMarkId(oAngle.get()));
-                    mark.setAttribute("data-angle", oAngle.get());
-                    gRotate.setAttribute("transform", "rotate(" + oAngle.get() + ")");
+                    var gRotate = Element.create("g");
+                    gRotate.attr("transform", "rotate(" + oAngle.get() + ")");
                     
-                    gTranslate.appendChild(mark);
-                    gRotate.appendChild(gTranslate);
-                    clockmarkslive.appendChild(gRotate);
+                    var gTranslate = Element.create("g");
+                    gTranslate.attr('transform', 'translate(480,0)');
+                    
+                    gTranslate.append(mark);
+                    gRotate.append(gTranslate);
+                    clockmarkslive.append(gRotate);
                 }
             },
             
             markAction: function(node){
                 var thisObj = this;
-                var angle = new Angle(node.getAttribute('data-angle'));
+                var angle = new Angle(node.attr('data-angle'));
                 var markObj = new Mark(angle.get());
 
-                var timeNode = document.getElementById('setTime');
-                timeNode.innerHTML = this.formatTime(angle.toTime());
+                var timeNode = Element.find('setTime');
+                timeNode.html(this.formatTime(angle.toTime()));
 
-                var textNode = document.getElementById('eventName');
-                textNode.value = markObj.title;
+                var textNode = Element.find('eventName');
+                textNode.val(markObj.title);
                 
-                var removeButton = document.getElementById('eventButtonRemove');
-                removeButton.onclick = function(){
+                var removeButton = Element.find('eventButtonRemove');
+                removeButton.on("click", function(){
                     thisObj.eventRemoveAction(angle);
-                }
+                });
                 
-                var form = document.getElementById('eventForm');
-                form.onsubmit = function(){
-                    thisObj.eventSubmitAction(angle, textNode.value);
+                var form = Element.find('eventForm');
+                form.on("submit", function(){
+                    thisObj.eventSubmitAction(angle, textNode.val());
                     return false;
-                }
+                });
             
                 markObj.checked = true;
                 markObj.save();
                 this.updateMarks();
             
-                var prompt = document.getElementById('eventPrompt');
-                prompt.setAttribute('display', 'inline');
+                var prompt = Element.find('eventPrompt');
+                prompt.attr('display', 'inline');
             },
             
             eventRemoveAction: function(angle){
@@ -613,8 +705,8 @@
             },
             
             closeEventPrompt: function(){
-                var prompt = document.getElementById('eventPrompt');
-                prompt.setAttribute('display', 'none');
+                var prompt = Element.find('eventPrompt');
+                prompt.attr('display', 'none');
             },
             
             formatTime: function(date){
