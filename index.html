@@ -388,6 +388,11 @@
         
         function Clock(){
             this.markStep = 5;
+            this.stopDelay = 200; //milliseconds
+            this.moveSpeed = 1/4; //1 is the speed of mouse
+            
+            this.markReadyColor = "#66ff00";
+            this.markActiveColor = "orange";
             
             this.hoursArrow = Element.find('hours');
             this.minutesArrow = Element.find('minutes');
@@ -403,19 +408,13 @@
             this.attachMouseEvents(clockface, body);
             
             this.isMarkReady = false;
-            this.stopDelay = 200;//milliseconds
             this.stopTimeout = null;
-            
-            this.markReadyColor = "#66ff00";
-            this.markActiveColor = "orange";
             
             this.speedTimeBlock = Element.find('speedTimeBlock');
             this.speedTime = Element.find('speedTime')
             
             this.touchStartAngle = null;
             this.currentAngle = null;
-            
-            this.moveSpeed = 1/4;
             
             var thisObj = this;
             Element.find('clearButton').on("click", function(e){
