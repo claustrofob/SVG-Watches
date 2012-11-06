@@ -161,8 +161,8 @@
                 if (data !== null){
                     data = JSON.parse(data);
                     if (typeof data == 'object'){
-                        if (data.checked !== null) this.checked = data.checked;
-                        if (data.title !== null) this.title = data.title;
+                        if (data.checked !== null) this.checked = data.checked || false;
+                        if (data.title !== null) this.title = data.title + "";
                         if (data.update !== null) this.update = new Date(data.update);
                         if (data.time !== null) this.time = new Date(data.time);
                     }
@@ -185,8 +185,8 @@
                 this.update = new Date();
                 
                 var data = {
-                    checked: this.checked,
-                    title: this.title,
+                    checked: this.checked || false,
+                    title: this.title + "",
                     update: this.update.getTime(),
                     time: this.time.getTime()
                 };
@@ -373,6 +373,13 @@
                 var args = Array.prototype.slice.call(arguments);
                 var strArgs = args.slice(1).join(",");
                 this.attr("transform", type + "(" + strArgs + ")");
+            },
+            
+            animate: function(attr, value, duration){
+                var cValue = this.attr(attr);
+                var size = Math.abs(cValue - value);
+                
+                //@todo finish this function 
             }
         }
         
@@ -604,7 +611,7 @@
                     var oAngle = new Angle(angle);
                     
                     var markObj = new Mark(oAngle.get());
-                    if (time.getTime() - markObj.time.getTime() > testTime){
+                    if (markObj.checked && (time.getTime() - markObj.time.getTime() > testTime)){
                         markObj.checked = false;
                         markObj.save();
                     }
@@ -687,6 +694,7 @@
                 });
             
                 markObj.checked = true;
+                markObj.time = angle.toTime();
                 markObj.save();
                 this.updateMarks();
             
