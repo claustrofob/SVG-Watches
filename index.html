@@ -22,6 +22,11 @@
         viewBox="0 0 1000 1000"
         preserveAspectRatio="xMidYMid meet" id="svg">
     <defs>
+        <g id="touchTexture" fill="#eee" fill-opacity="0.1">
+            <rect class="touch-texture-rect" x="260" y="-4" width="8" height="8"></rect>
+            <rect class="touch-texture-rect" x="280" y="-4" width="8" height="8"></rect>
+            <rect class="touch-texture-rect" x="300" y="-4" width="8" height="8"></rect>
+        </g>
         <filter id="drop-shadow"> 
             <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
             <feOffset in="blur" dx="1" dy="0" result="offsetBlur"/>
@@ -48,6 +53,7 @@
     <g transform="translate(500, 500)">
         <g id="clockface">
             <circle cx="0" cy="0" r="494" stroke="#000" fill="#222" stroke-width="6" />
+            <g id="touchTextureBlock"></g>
             <g id="clockmarkslive" fill="#eee"></g>
             <g id="hours">
                 <rect class="arrows" x="-100" y="-15" width="350" height="30"></rect>
@@ -312,6 +318,8 @@
         function Element(node){
             if (!node) throw new Error("DOM element required");
             this.node = node;
+            
+            this.xlinkNS = "http://www.w3.org/1999/xlink";
         }
         
         Element.prototype = {
@@ -339,7 +347,12 @@
                 }
                 
                 for (var x in attr){
-                    this.node.setAttribute(x, attr[x]);
+                    var attrParts = x.split(':', 2);
+                    if (attrParts.length == 2 && attrParts[0] == 'xlink'){
+                        this.getNode().setAttributeNS(this.xlinkNS, attrParts[1], attr[x]);
+                    } else {
+                        this.getNode().setAttribute(x, attr[x]);
+                    }
                 }
             },
             
@@ -630,10 +643,13 @@
 
             createMarks: function(){
                 var clockmarkslive = Element.find('clockmarkslive');
+                var touchTextureBlock = Element.find('touchTextureBlock');
                 var thisObj = this;
     
                 for (var angle = 0; angle < 360; angle += this.markStep){
                     var oAngle = new Angle(angle);
+                    
+                    this.drawTouchTexture(touchTextureBlock, oAngle);
                     
                     var width = 0, height = 0, className = "";
                 
@@ -669,6 +685,13 @@
                     gRotate.append(gTranslate);
                     clockmarkslive.append(gRotate);
                 }
+            },
+            
+            drawTouchTexture: function(touchTextureBlock, angle){
+                var textureElement = Element.create('use');
+                textureElement.attr("xlink:href", "#touchTexture");
+                textureElement.transform("rotate", angle.get());
+                touchTextureBlock.append(textureElement);
             },
             
             markAction: function(node){
