@@ -27,6 +27,8 @@
             <rect class="touch-texture-rect" x="280" y="-4" width="8" height="8"></rect>
             <rect class="touch-texture-rect" x="300" y="-4" width="8" height="8"></rect>
         </g>
+        <rect id="markPrototype" class="mark" width="130" height="24" x="-130" y="-12"></rect>
+        <rect id="smallMarkPrototype" class="smallmark" width="80" height="18" x="-80" y="-9"></rect>
         <filter id="drop-shadow"> 
             <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
             <feOffset in="blur" dx="1" dy="0" result="offsetBlur"/>
@@ -318,8 +320,6 @@
         function Element(node){
             if (!node) throw new Error("DOM element required");
             this.node = node;
-            
-            this.xlinkNS = "http://www.w3.org/1999/xlink";
         }
         
         Element.prototype = {
@@ -349,9 +349,9 @@
                 for (var x in attr){
                     var attrParts = x.split(':', 2);
                     if (attrParts.length == 2 && attrParts[0] == 'xlink'){
-                        this.getNode().setAttributeNS(this.xlinkNS, attrParts[1], attr[x]);
+                        this.getNode().setAttributeNS(Element.xlinkNS, attrParts[1], attr[x]);
                     } else {
-                        this.getNode().setAttribute(x, attr[x]);
+                        this.getNode().setAttributeNS(null, x, attr[x]);
                     }
                 }
             },
@@ -396,11 +396,18 @@
             }
         }
         
-        Element.xmlns = "http://www.w3.org/2000/svg";
+        Element.xmlNS = "http://www.w3.org/2000/svg";
+        Element.xlinkNS = "http://www.w3.org/1999/xlink";
         
         Element.create = function(tag){
-            var node = document.createElementNS(Element.xmlns, tag);
+            var node = document.createElementNS(Element.xmlNS, tag);
             return new Element(node);
+        }
+        
+        Element.use = function(id){
+            var el = Element.create('use');
+            el.attr("xlink:href", '#' + id);
+            return el;
         }
         
         Element.find = function(id){
@@ -572,10 +579,7 @@
         
             toggleMark: function(mark, reset){
                 var strokeWidth = !reset ? '12' : '0';
-                mark.attr({
-                    "stroke": this.markActiveColor,
-                    "stroke-width": strokeWidth
-                });
+                mark.attr("style", "stroke:" + this.markActiveColor + "; stroke-width:" + strokeWidth);
             },
         
             showSpeedTime: function(angle){
@@ -644,54 +648,48 @@
             createMarks: function(){
                 var clockmarkslive = Element.find('clockmarkslive');
                 var touchTextureBlock = Element.find('touchTextureBlock');
-                var thisObj = this;
     
                 for (var angle = 0; angle < 360; angle += this.markStep){
                     var oAngle = new Angle(angle);
                     
-                    this.drawTouchTexture(touchTextureBlock, oAngle);
+                    var textureElement = this.drawTouchTexture(oAngle);
+                    touchTextureBlock.append(textureElement);
                     
-                    var width = 0, height = 0, className = "";
-                
-                    if (!(oAngle.get() % Angle.config.oneHourAngle)){
-                        className = "mark";
-                        width = 130;
-                        height = 24;
-                    } else {
-                        className = "smallmark";
-                        width = 80;
-                        height = 18;
-                    }
-                    
-                    var mark = Element.create("rect");
-                    mark.attr({
-                        "class": className,
-                        "x": -width,
-                        "y": -Math.floor(height / 2),
-                        "width": width,
-                        "height": height,
-                        "stroke-width": "0",
-                        "id": this.getMarkId(oAngle.get()),
-                        "data-angle": oAngle.get()
-                    });
-                    
-                    var gRotate = Element.create("g");
-                    gRotate.transform("rotate", oAngle.get());
-                    
-                    var gTranslate = Element.create("g");
-                    gTranslate.transform("translate", 480, 0);
-                    
-                    gTranslate.append(mark);
-                    gRotate.append(gTranslate);
-                    clockmarkslive.append(gRotate);
+                    var markElement = this.drawMark(oAngle);
+                    clockmarkslive.append(markElement);
                 }
             },
             
-            drawTouchTexture: function(touchTextureBlock, angle){
-                var textureElement = Element.create('use');
-                textureElement.attr("xlink:href", "#touchTexture");
+            drawMark: function(angle){
+                var useId = '';
+                if (!(angle.get() % Angle.config.oneHourAngle)){
+                    useId = 'markPrototype';
+                } else {
+                    useId = 'smallMarkPrototype';
+                }
+                
+                var mark = Element.use(useId);
+                mark.attr({
+                    "id": this.getMarkId(angle.get()),
+                    "data-angle": angle.get()
+                });
+                
+                var gRotate = Element.create("g");
+                gRotate.transform("rotate", angle.get());
+                
+                var gTranslate = Element.create("g");
+                gTranslate.transform("translate", 480, 0);
+                
+                gTranslate.append(mark);
+                gRotate.append(gTranslate);
+                
+                return gRotate;
+            },
+            
+            drawTouchTexture: function(angle){
+                var textureElement = Element.use('touchTexture');
                 textureElement.transform("rotate", angle.get());
-                touchTextureBlock.append(textureElement);
+                return textureElement;
             },
             
             markAction: function(node){
