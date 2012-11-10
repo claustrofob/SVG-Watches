@@ -22,7 +22,12 @@
         viewBox="0 0 1000 1000"
         preserveAspectRatio="xMidYMid meet" id="svg">
     <defs>
-        <g id="touchTexture" fill="#eee" fill-opacity="0.2">
+        <radialGradient id="touchGradient" cx="50%" cy="50%" r="50%">
+            <stop stop-color="#222" offset="40%"/>
+            <stop stop-color="#323232" offset="60%"/>
+            <stop stop-color="#222" offset="75%"/>
+        </radialGradient>
+        <g id="touchTexture" fill="#eee" fill-opacity="0.15">
             <rect class="touch-texture-rect" x="260" y="-4" width="8" height="8"></rect>
             <rect class="touch-texture-rect" x="280" y="-4" width="8" height="8"></rect>
             <rect class="touch-texture-rect" x="300" y="-4" width="8" height="8"></rect>
@@ -54,7 +59,7 @@
     <circle id="reloadButton" cx="100" cy="900" r="50" fill="#777" />
     <g transform="translate(500, 500)">
         <g id="clockface">
-            <circle cx="0" cy="0" r="494" stroke="#000" fill="#222" stroke-width="6" />
+            <circle cx="0" cy="0" r="494" stroke="#000" fill="url(#touchGradient)" stroke-width="6" />
             <g id="touchTextureBlock"></g>
             <g id="clockmarkslive" fill="#eee"></g>
             <g id="hours">
