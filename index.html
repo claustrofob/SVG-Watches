@@ -27,13 +27,13 @@
             <stop stop-color="#323232" offset="60%"/>
             <stop stop-color="#222" offset="75%"/>
         </radialGradient>
-        <g id="touchTexture" fill="#eee" fill-opacity="0.15">
+        <g id="touchTexture" fill="#eee" fill-opacity="0.1">
             <rect class="touch-texture-rect" x="260" y="-4" width="8" height="8"></rect>
             <rect class="touch-texture-rect" x="280" y="-4" width="8" height="8"></rect>
             <rect class="touch-texture-rect" x="300" y="-4" width="8" height="8"></rect>
         </g>
-        <rect id="markPrototype" class="mark" width="130" height="24" x="-130" y="-12"></rect>
-        <rect id="smallMarkPrototype" class="smallmark" width="80" height="18" x="-80" y="-9"></rect>
+        <rect id="markPrototype" class="mark" width="130" height="24" x="-140" y="-12"></rect>
+        <rect id="smallMarkPrototype" class="smallmark" width="80" height="18" x="-90" y="-9"></rect>
         <filter id="drop-shadow"> 
             <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
             <feOffset in="blur" dx="1" dy="0" result="offsetBlur"/>
@@ -74,6 +74,7 @@
                 <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
             </g>
             <g id="speedTimeBlock" display="none">
+                <circle id="speedTimeMarker" r="12" cx="482" cy="0" fill="orange" />
                 <circle cx="0" cy="0" r="200" fill="#777" />
                 <text id="speedTime" x="0" y="40" font-size="140" fill="#eee" text-anchor="middle"></text>
             </g>
@@ -430,7 +431,6 @@
             this.moveSpeed = 1/4; //1 is the speed of mouse
             
             this.markReadyColor = "#66ff00";
-            this.markActiveColor = "orange";
             
             this.hoursArrow = Element.find('hours');
             this.minutesArrow = Element.find('minutes');
@@ -449,7 +449,8 @@
             this.stopTimeout = null;
             
             this.speedTimeBlock = Element.find('speedTimeBlock');
-            this.speedTime = Element.find('speedTime')
+            this.speedTime = Element.find('speedTime');
+            this.speedTimeMarker = Element.find('speedTimeMarker');
             
             this.touchStartAngle = null;
             this.currentAngle = null;
@@ -548,10 +549,6 @@
 
                 var mark = Element.find(this.getMarkId(angle.get()));
                 if (!mark || (this.activeMark && mark.attr('data-angle') == this.activeMark.attr('data-angle'))) return;
-
-                if (this.activeMark){
-                    this.toggleMark(this.activeMark, true);
-                }
                 
                 if (this.stopTimeout) clearTimeout(this.stopTimeout);
                 
@@ -560,7 +557,6 @@
                     thisObj.setMarkReady(mark);
                 }, this.stopDelay);
                 
-                this.toggleMark(mark);
                 this.activeMark = mark;
                 
                 this.showSpeedTime(angle);
@@ -568,7 +564,6 @@
         
             stopHighlightMark: function(){
                 if (!this.activeMark) return;
-                this.toggleMark(this.activeMark, true);
 
                 if (this.isMarkReady){
                     this.markAction(this.activeMark);
@@ -581,16 +576,13 @@
             setMarkReady: function(mark){
                 this.isMarkReady = true;
             },
-        
-            toggleMark: function(mark, reset){
-                var strokeWidth = !reset ? '12' : '0';
-                mark.attr("style", "stroke:" + this.markActiveColor + "; stroke-width:" + strokeWidth);
-            },
-        
+
             showSpeedTime: function(angle){
                 var textTime = this.formatTime(angle.toTime());
                 this.speedTime.text(textTime);
                 this.speedTimeBlock.attr('display', 'inline');
+                
+                this.speedTimeMarker.transform("rotate", angle.get());
             },
         
             hideSpeedTime: function(){
