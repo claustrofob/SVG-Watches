@@ -32,8 +32,8 @@
             <rect class="touch-texture-rect" x="280" y="-4" width="8" height="8"></rect>
             <rect class="touch-texture-rect" x="300" y="-4" width="8" height="8"></rect>
         </g>
-        <rect id="markPrototype" class="mark" width="130" height="24" x="340" y="-12"></rect>
-        <rect id="smallMarkPrototype" class="smallmark" width="80" height="18" x="390" y="-9"></rect>
+        <rect id="markPrototype" class="mark" width="130" height="24" x="345" y="-12"></rect>
+        <rect id="smallMarkPrototype" class="smallmark" width="80" height="18" x="395" y="-9"></rect>
         <filter id="drop-shadow"> 
             <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
             <feOffset in="blur" dx="1" dy="0" result="offsetBlur"/>
@@ -59,7 +59,7 @@
     <circle id="reloadButton" cx="100" cy="900" r="50" fill="#777" />
     <g transform="translate(500, 500)">
         <g id="clockface">
-            <circle cx="0" cy="0" r="482" stroke="#000" fill="url(#touchGradient)" stroke-width="6" />
+            <circle cx="0" cy="0" r="485" stroke="#000" fill="url(#touchGradient)" stroke-width="0" />
             <g id="touchTextureBlock"></g>
             <g id="clockmarkslive" fill="#eee"></g>
             <g id="hours">
@@ -74,7 +74,7 @@
                 <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
             </g>
             <g id="speedTimeBlock" display="none">
-                <polygon id="speedTimeMarker" r="13" cx="485" cy="0" points="440 0, 500 -20, 500 20" fill="red" filter="url(#drop-shadow)" />
+                <polygon id="speedTimeMarker" points="420 0, 495 -25, 495 25" fill="red" filter="url(#drop-shadow)" />
                 <circle cx="0" cy="0" r="200" fill="#777" />
                 <text id="speedTime" x="0" y="40" font-size="140" fill="#eee" text-anchor="middle"></text>
             </g>
@@ -664,7 +664,12 @@
                 this.speedTime.text(textTime);
                 this.speedTimeBlock.attr('display', 'inline');
                 
+                var time = new Date();
+                var hourAngle = Angle.fromTimeHour(time);
+                var distance = angle.distance(hourAngle);
+                
                 this.speedTimeMarker.transform("rotate", angle.get());
+                this.speedTimeMarker.attr('fill', this.getFillColor(distance));
             },
         
             hideSpeedTime: function(){
@@ -716,9 +721,9 @@
                     if (!mark) continue;
                     
                     var distance = oAngle.distance(hourAngle);
-                    
+
                     mark.attr({
-                        "fill": this.getFillColor(markObj, distance),
+                        "fill": markObj.checked ? this.getFillColor(distance) : '#eee',
                         "fill-opacity": this.getOpacity(distance)
                     });
                 }
@@ -764,17 +769,13 @@
                 return textureElement;
             },
 
-            getFillColor: function(markObj, dist){
+            getFillColor: function(dist){
                 var rgbcolor;
                 
-                if (!markObj.checked){
-                    rgbcolor = '#eeeeee';
+                if (dist.get() > 0){
+                    rgbcolor = dist.get() < 45 ? '#ffff00' : '#00ff00'; 
                 } else {
-                    if (dist.get() > 0){
-                        rgbcolor = dist.get() < 45 ? '#ffff00' : '#00ff00'; 
-                    } else {
-                        rgbcolor = '#ff0000';
-                    }
+                    rgbcolor = '#ff0000';
                 }
                 
                 return rgbcolor;
