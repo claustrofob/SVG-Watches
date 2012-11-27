@@ -74,7 +74,7 @@
                 <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
             </g>
             <g id="speedTimeBlock" display="none">
-                <circle id="speedTimeMarker" r="13" cx="485" cy="0" fill="red" />
+                <polygon id="speedTimeMarker" r="13" cx="485" cy="0" points="440 0, 500 -20, 500 20" fill="red" />
                 <circle cx="0" cy="0" r="200" fill="#777" />
                 <text id="speedTime" x="0" y="40" font-size="140" fill="#eee" text-anchor="middle"></text>
             </g>
@@ -425,6 +425,82 @@
         
         /****************************************************/
         
+        function formatTime(date){
+            var hours = date.getHours() + '';
+            var minutes = date.getMinutes() + '';
+            return (hours.length < 2 ? '0' : '') + hours + ':' + (minutes.length < 2 ? '0' : '') + minutes;
+        }
+        
+        /****************************************************/
+        
+        function EventDialog(clock){
+            this.clock = clock;
+        
+            this.timeNode = Element.find('setTime');
+            this.textNode = Element.find('eventName');
+            this.removeButton = Element.find('eventButtonRemove');
+            this.form = Element.find('eventForm');
+            this.prompt = Element.find('eventPrompt');
+        }
+        
+        EventDialog.prototype = {
+            show: function(angle){
+                var thisObj = this;
+                
+                var angle = new Angle(angle);
+                var markObj = new Mark(angle.get());
+
+                this.timeNode.html(formatTime(angle.toTime()));
+                this.textNode.val(markObj.title);
+                
+                this.removeButton.on("click", function(){
+                    thisObj.remove(angle);
+                });
+                
+                this.form.on("submit", function(e){
+                    e.preventDefault();
+                    thisObj.submit(angle, thisObj.textNode.val());
+                    return false;
+                });
+            
+                markObj.checked = true;
+                markObj.time = angle.toTime();
+                markObj.save();
+            
+                this.prompt.attr('display', 'inline');
+                
+                this.clock.updateMarks();
+            },
+            
+            remove: function(angle){
+                this.close();
+                
+                var markObj = new Mark(angle.get());
+                markObj.checked = false;
+                markObj.save();
+                
+                this.clock.updateMarks();
+            },
+            
+            submit: function(angle, title){
+                this.close();
+                
+                var markObj = new Mark(angle.get());
+                markObj.checked = true;
+                markObj.title = title;
+                markObj.time = angle.toTime();
+                markObj.save();
+                
+                this.clock.updateMarks();
+            },
+            
+            close: function(){
+                this.prompt.attr('display', 'none');
+            }
+        }
+        
+        /****************************************************/
+        
         function Clock(){
             this.markStep = 5;
             this.stopDelay = 200; //milliseconds
@@ -452,23 +528,29 @@
             this.speedTime = Element.find('speedTime');
             this.speedTimeMarker = Element.find('speedTimeMarker');
             
+            this.eventDialog = new EventDialog(this);
+            
             this.touchStartAngle = null;
             this.currentAngle = null;
             
-            var thisObj = this;
-            Element.find('clearButton').on("click", function(e){
-                e.preventDefault();
-                localStorage.clear();
-                thisObj.updateMarks();
-            });
-            
-            Element.find('reloadButton').on("click", function(e){
-                e.preventDefault();
-                alert('Reload data. Coming soon...');
-            });
+            this.initServiceButtons();
         }
         
         Clock.prototype = {
+            initServiceButtons: function(){
+                var thisObj = this;
+                Element.find('clearButton').on("click", function(e){
+                    e.preventDefault();
+                    localStorage.clear();
+                    thisObj.updateMarks();
+                });
+                
+                Element.find('reloadButton').on("click", function(e){
+                    e.preventDefault();
+                    alert('Reload data. Coming soon...');
+                });
+            },
+        
             attachTouchEvents: function(element, body){
                 var thisObj = this;
                 var isTouchStart = false;
@@ -566,7 +648,7 @@
                 if (!this.activeMark) return;
 
                 if (this.isMarkReady){
-                    this.markAction(this.activeMark);
+                    this.eventDialog.show(this.activeMark.attr('data-angle'));
                 }
 
                 this.activeMark = null;
@@ -578,7 +660,7 @@
             },
 
             showSpeedTime: function(angle){
-                var textTime = this.formatTime(angle.toTime());
+                var textTime = formatTime(angle.toTime());
                 this.speedTime.text(textTime);
                 this.speedTimeBlock.attr('display', 'inline');
                 
@@ -681,68 +763,7 @@
                 textureElement.transform("rotate", angle.get());
                 return textureElement;
             },
-            
-            markAction: function(node){
-                var thisObj = this;
-                var angle = new Angle(node.attr('data-angle'));
-                var markObj = new Mark(angle.get());
 
-                var timeNode = Element.find('setTime');
-                timeNode.html(this.formatTime(angle.toTime()));
-
-                var textNode = Element.find('eventName');
-                textNode.val(markObj.title);
-                
-                var removeButton = Element.find('eventButtonRemove');
-                removeButton.on("click", function(){
-                    thisObj.eventRemoveAction(angle);
-                });
-                
-                var form = Element.find('eventForm');
-                form.on("submit", function(){
-                    thisObj.eventSubmitAction(angle, textNode.val());
-                    return false;
-                });
-            
-                markObj.checked = true;
-                markObj.time = angle.toTime();
-                markObj.save();
-                this.updateMarks();
-            
-                var prompt = Element.find('eventPrompt');
-                prompt.attr('display', 'inline');
-            },
-            
-            eventRemoveAction: function(angle){
-                this.closeEventPrompt();
-                var markObj = new Mark(angle.get());
-                markObj.checked = false;
-                markObj.save();
-                this.updateMarks();
-            },
-            
-            eventSubmitAction: function(angle, title){
-                this.closeEventPrompt();
-                
-                var markObj = new Mark(angle.get());
-                markObj.checked = true;
-                markObj.title = title;
-                markObj.time = angle.toTime();
-                markObj.save();
-                this.updateMarks();
-            },
-            
-            closeEventPrompt: function(){
-                var prompt = Element.find('eventPrompt');
-                prompt.attr('display', 'none');
-            },
-            
-            formatTime: function(date){
-                var hours = date.getHours() + '';
-                var minutes = date.getMinutes() + '';
-                return (hours.length < 2 ? '0' : '') + hours + ':' + (minutes.length < 2 ? '0' : '') + minutes;
-            },
-            
             getFillColor: function(markObj, dist){
                 var rgbcolor;
                 
