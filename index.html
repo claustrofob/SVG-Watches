@@ -10,7 +10,7 @@
         padding: 0;
     }
     body{
-        background: url(back.png);
+        background: #3B3B3B url(back.png);
         overflow: hidden;
         cursor: default;
     }
@@ -45,36 +45,35 @@
         <style type="text/css"><![CDATA[
         .arrows { 
             fill: #eee; 
-            filter: url(#drop-shadow);
         }
         .seconds{
             fill: red;
         }
-        .mark, .smallmark{
-        
+        .shadow{
+        	filter: url(#drop-shadow);
         }
         ]]></style>
     </defs>
-    <circle id="clearButton" cx="900" cy="100" r="50" fill="#777" />
-    <circle id="reloadButton" cx="100" cy="900" r="50" fill="#777" />
+    <circle id="clearButton" cx="900" cy="100" r="50" fill="#777" class="shadow" />
+    <circle id="reloadButton" cx="100" cy="900" r="50" fill="#777" class="shadow" />
     <g transform="translate(500, 500)">
         <g id="clockface">
             <circle cx="0" cy="0" r="485" stroke="#000" fill="url(#touchGradient)" stroke-width="0" />
             <g id="touchTextureBlock"></g>
             <g id="clockmarkslive" fill="#eee"></g>
             <g id="hours">
-                <rect class="arrows" x="-100" y="-15" width="350" height="30"></rect>
+                <rect class="shadow arrows" x="-100" y="-15" width="350" height="30"></rect>
             </g>
             <g id="minutes">
-                <rect class="arrows" x="-100" y="-15" width="480" height="30"></rect>
+                <rect class="shadow arrows" x="-100" y="-15" width="480" height="30"></rect>
             </g>
-            <g id="seconds" class="arrows seconds" mask="url(#center)">
+            <g id="seconds" class="shadow arrows seconds" mask="url(#center)">
                 <rect x="-100" y="-5" width="490" height="10" transform="rotate(0)"></rect>
                 <circle cx="0" cy="0" r="13"/>
                 <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
             </g>
             <g id="speedTimeBlock" display="none">
-                <polygon id="speedTimeMarker" points="420 0, 495 -25, 495 25" fill="red" filter="url(#drop-shadow)" />
+                <polygon id="speedTimeMarker" points="420 0, 495 -25, 495 25" fill="red" class="shadow" />
                 <circle cx="0" cy="0" r="200" fill="#777" />
                 <text id="speedTime" x="0" y="40" font-size="140" fill="#eee" text-anchor="middle"></text>
             </g>
