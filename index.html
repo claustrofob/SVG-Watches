@@ -32,8 +32,8 @@
             <rect class="touch-texture-rect" x="280" y="-4" width="8" height="8"></rect>
             <rect class="touch-texture-rect" x="300" y="-4" width="8" height="8"></rect>
         </g>
-        <rect id="markPrototype" class="mark" width="130" height="24" x="-140" y="-12"></rect>
-        <rect id="smallMarkPrototype" class="smallmark" width="80" height="18" x="-90" y="-9"></rect>
+        <rect id="markPrototype" class="mark" width="130" height="24" x="340" y="-12"></rect>
+        <rect id="smallMarkPrototype" class="smallmark" width="80" height="18" x="390" y="-9"></rect>
         <filter id="drop-shadow"> 
             <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
             <feOffset in="blur" dx="1" dy="0" result="offsetBlur"/>
@@ -59,7 +59,7 @@
     <circle id="reloadButton" cx="100" cy="900" r="50" fill="#777" />
     <g transform="translate(500, 500)">
         <g id="clockface">
-            <circle cx="0" cy="0" r="494" stroke="#000" fill="url(#touchGradient)" stroke-width="6" />
+            <circle cx="0" cy="0" r="482" stroke="#000" fill="url(#touchGradient)" stroke-width="6" />
             <g id="touchTextureBlock"></g>
             <g id="clockmarkslive" fill="#eee"></g>
             <g id="hours">
@@ -74,7 +74,7 @@
                 <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
             </g>
             <g id="speedTimeBlock" display="none">
-                <circle id="speedTimeMarker" r="12" cx="482" cy="0" fill="orange" />
+                <circle id="speedTimeMarker" r="13" cx="485" cy="0" fill="red" />
                 <circle cx="0" cy="0" r="200" fill="#777" />
                 <text id="speedTime" x="0" y="40" font-size="140" fill="#eee" text-anchor="middle"></text>
             </g>
@@ -671,6 +671,8 @@
                     "data-angle": angle.get()
                 });
                 
+                mark.transform("rotate", angle.get());
+                /*
                 var gRotate = Element.create("g");
                 gRotate.transform("rotate", angle.get());
                 
@@ -679,8 +681,8 @@
                 
                 gTranslate.append(mark);
                 gRotate.append(gTranslate);
-                
-                return gRotate;
+                */
+                return mark;
             },
             
             drawTouchTexture: function(angle){
