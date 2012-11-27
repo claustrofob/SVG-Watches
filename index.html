@@ -32,8 +32,8 @@
             <rect class="touch-texture-rect" x="280" y="-4" width="8" height="8"></rect>
             <rect class="touch-texture-rect" x="300" y="-4" width="8" height="8"></rect>
         </g>
-        <rect id="markPrototype" class="mark" width="130" height="24" x="345" y="-12"></rect>
-        <rect id="smallMarkPrototype" class="smallmark" width="80" height="18" x="395" y="-9"></rect>
+        <polygon id="markPrototype" points="345 10, 345 -10, 475 -13, 475 13" class="mark" />
+        <polygon id="smallMarkPrototype" points="395 9, 395 -9, 475 -11, 475 11" class="smallmark" />
         <filter id="drop-shadow"> 
             <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
             <feOffset in="blur" dx="1" dy="0" result="offsetBlur"/>
