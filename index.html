@@ -43,39 +43,61 @@
             </feMerge>
         </filter>
         <style type="text/css"><![CDATA[
+        .clockface-cover{
+            fill: url(#touchGradient);
+        }
         .arrows { 
             fill: #eee; 
         }
         .seconds{
             fill: red;
         }
+        .seconds-nail{
+            fill: #eee;
+            stroke-width: 3px;
+            stroke: #444;
+        }
         .shadow{
-        	filter: url(#drop-shadow);
+            filter: url(#drop-shadow);
+        }
+        .service-button{
+            fill: #777; 
+        }
+        .mark, .smallmark{
+            fill: "#eee";
+        }
+        .speed-time{
+            fill: #eee;
+            text-anchor: middle;
+            font-size: 140px;
+        }
+        .speed-time-cover{
+            fill: #777;
         }
         ]]></style>
     </defs>
-    <circle id="clearButton" cx="900" cy="100" r="50" fill="#777" class="shadow" />
-    <circle id="reloadButton" cx="100" cy="900" r="50" fill="#777" class="shadow" />
+    <circle id="clearButton" cx="900" cy="100" r="50" class="service-button shadow" />
+    <circle id="reloadButton" cx="100" cy="900" r="50" class="service-button shadow" />
     <g transform="translate(500, 500)">
-        <g id="clockface">
-            <circle cx="0" cy="0" r="485" stroke="#000" fill="url(#touchGradient)" stroke-width="0" />
+        <g id="clockface" display="none">
+            <circle cx="0" cy="0" r="485" class="clockface-cover" />
             <g id="touchTextureBlock"></g>
-            <g id="clockmarkslive" fill="#eee"></g>
+            <g id="clockmarkslive"></g>
             <g id="hours">
                 <rect class="shadow arrows" x="-100" y="-15" width="350" height="30"></rect>
             </g>
             <g id="minutes">
                 <rect class="shadow arrows" x="-100" y="-15" width="480" height="30"></rect>
             </g>
-            <g id="seconds" class="shadow arrows seconds" mask="url(#center)">
-                <rect x="-100" y="-5" width="490" height="10" transform="rotate(0)"></rect>
+            <g id="seconds" class="shadow arrows seconds">
+                <rect x="-100" y="-5" width="490" height="10"></rect>
                 <circle cx="0" cy="0" r="13"/>
-                <circle cx="0" cy="0" r="5" fill="#eee" stroke-width="3" stroke="#444" />
+                <circle cx="0" cy="0" r="5" class="seconds-nail" />
             </g>
             <g id="speedTimeBlock" display="none">
-                <polygon id="speedTimeMarker" points="420 0, 495 -25, 495 25" fill="red" class="shadow" />
-                <circle cx="0" cy="0" r="200" fill="#777" />
-                <text id="speedTime" x="0" y="40" font-size="140" fill="#eee" text-anchor="middle"></text>
+                <polygon id="speedTimeMarker" points="420 0, 495 -25, 495 25" class="shadow" />
+                <circle cx="0" cy="0" r="200" class="speed-time-cover" />
+                <text id="speedTime" x="0" y="40" class="speed-time"></text>
             </g>
         </g>
         <g transform="translate(-400, -235)">
@@ -138,661 +160,663 @@
             </foreignObject>
         </g>
     </g>
-    <script type="application/ecmascript"><![CDATA[
-        window.onload = function(){
-            var clock = new Clock();
-            clock.start();
-        }
+</svg>
+<script type="text/javascript">
+window.onload = function(){
+    var clock = new Clock();
+    clock.start();
+}
+
+/****************************************************/
+
+function Mark(id){
+    this.update = new Date();
+    this.time = new Date();
+    
+    if (id !== null){
+        this.find(id);
+    }
+}
+
+Mark.prototype = {
+    id: null,
+
+    checked: false,
+    
+    title: '',
+    
+    time: 0,
+    
+    update: 0,
+    
+    find: function(id){
+        this.reset();
+        this.id = id;
         
-        /****************************************************/
-        
-        function Mark(id){
-            this.update = new Date();
-            this.time = new Date();
-            
-            if (id !== null){
-                this.find(id);
+        var data = localStorage.getItem(id);
+        if (data !== null){
+            data = JSON.parse(data);
+            if (typeof data == 'object'){
+                if (data.checked !== null) this.checked = data.checked || false;
+                if (data.title !== null) this.title = data.title + "";
+                if (data.update !== null) this.update = new Date(data.update);
+                if (data.time !== null) this.time = new Date(data.time);
             }
         }
+    },
+    
+    reset: function(){
+        this.id = null;
+        this.checked = false;
+        this.title = '';
+        this.time = new Date();
+    },
+    
+    remove: function(){
+        localStorage.removeItem(this.id);
+        this.reset();
+    },
+    
+    save: function(){
+        this.update = new Date();
         
-        Mark.prototype = {
-            id: null,
+        var data = {
+            checked: this.checked || false,
+            title: this.title + "",
+            update: this.update.getTime(),
+            time: this.time.getTime()
+        };
         
-            checked: false,
-            
-            title: '',
-            
-            time: 0,
-            
-            update: 0,
-            
-            find: function(id){
-                this.reset();
-                this.id = id;
-                
-                var data = localStorage.getItem(id);
-                if (data !== null){
-                    data = JSON.parse(data);
-                    if (typeof data == 'object'){
-                        if (data.checked !== null) this.checked = data.checked || false;
-                        if (data.title !== null) this.title = data.title + "";
-                        if (data.update !== null) this.update = new Date(data.update);
-                        if (data.time !== null) this.time = new Date(data.time);
-                    }
-                }
-            },
-            
-            reset: function(){
-                this.id = null;
-                this.checked = false;
-                this.title = '';
-                this.time = new Date();
-            },
-            
-            remove: function(){
-                localStorage.removeItem(this.id);
-                this.reset();
-            },
-            
-            save: function(){
-                this.update = new Date();
-                
-                var data = {
-                    checked: this.checked || false,
-                    title: this.title + "",
-                    update: this.update.getTime(),
-                    time: this.time.getTime()
-                };
-                
-                localStorage.setItem(this.id, JSON.stringify(data));
+        localStorage.setItem(this.id, JSON.stringify(data));
+    }
+}
+
+/****************************************************/
+
+function Angle(angle){
+    this.angle = angle;
+}
+
+Angle.prototype = {
+    angle: 0,
+
+    get: function(){
+        return this.angle;
+    },
+    
+    set: function(angle){
+        angle += "";
+        this.angle = angle * 1;
+    },
+    
+    add: function(angle){
+        angle += "";
+        this.angle += angle * 1;
+    },
+    
+    normalize: function(){
+        this.angle = this.normalized();
+    },
+    
+    normalized: function(){
+        var angle = this.angle;
+        if (angle < 0) angle = 360 + angle % 360;
+        if (angle >= 360) angle = angle % 360;
+        
+        return angle;
+    },
+    
+    distance: function(angle){
+        if (typeof angle !== "object") angle = new Angle(angle);
+
+        var calcAngle = this.normalized() - angle.normalized();
+        var isPositive = false;
+
+        if (calcAngle >= 0){
+            isPositive = calcAngle <= 300;
+            if (!isPositive) calcAngle = 360 - calcAngle;
+        } else {
+            isPositive = -calcAngle > 60;
+            if (isPositive) calcAngle += 360;
+        }
+        
+        calcAngle = Math.abs(calcAngle);
+
+        return new Angle(isPositive ? calcAngle : -calcAngle);
+    },
+    
+    toTime: function(){
+        var time = new Date();
+        var hourAngle = Angle.fromTimeHour(time);
+        var milliseconds = this.distance(hourAngle).toMilliseconds();
+        return new Date(time.getTime() + milliseconds);
+    },
+    
+    /**
+     * 12 hours in 360 degrees
+     */
+    toMilliseconds: function(){
+        return 12 * 60 * 60 * 1000 / 360 * this.angle;
+    },
+    
+    toString: function(){
+        return this.get();
+    }
+}
+
+Angle.config = {
+    startAngle: 270,
+    oneHourAngle: 30,
+    oneMinuteAngle: 6,
+    oneSecondAngle: 6
+}
+
+Angle.fromPoint = function(x1, x2, y1, y2){
+    x2 = x2 - Math.floor(document.body.clientWidth / 2);
+    y2 = y2 - Math.floor(document.body.clientHeight / 2);
+
+    var angle = Math.atan2(x1-x2,y1-y2)*(180/Math.PI);
+    angle += 90;
+    if(angle < 0){
+        angle = Math.abs(angle);
+    } else {
+        angle = 360 - angle;
+    }
+    return new Angle(angle);
+}
+
+Angle.fromTimeHour = function(time){
+    var angle = new Angle(Angle.config.startAngle + Angle.config.oneHourAngle * (time.getHours() + time.getMinutes() / 60 + time.getSeconds() / 3600));
+    angle.normalize();
+    return angle;
+}
+    
+Angle.fromTimeMinute = function(time){
+    var angle = new Angle(Angle.config.startAngle + Angle.config.oneMinuteAngle * (time.getMinutes() + time.getSeconds() / 60));
+    angle.normalize();
+    return angle;
+}
+
+Angle.fromTimeSecond = function(time){
+    var angle = new Angle(Angle.config.startAngle + Angle.config.oneSecondAngle * (time.getSeconds() + time.getMilliseconds() / 1000));
+    angle.normalize();
+    return angle;
+}
+
+/****************************************************/
+
+function Element(node){
+    if (!node) throw new Error("DOM element required");
+    this.node = node;
+}
+
+Element.prototype = {
+    getNode: function(){
+        return this.node;
+    },
+
+    append: function(element){
+        this.getNode().appendChild(element.getNode());
+    },
+    
+    appendTo: function(element){
+        element.getNode().appendChild(this.getNode());
+    },
+    
+    attr: function(attr, value){
+        if (typeof attr !== "object"){
+            if (value === undefined){
+                return this.getNode().getAttribute(attr);
             }
+            
+            var attrName = attr;
+            attr = {};
+            attr[attrName] = value;
         }
         
-        /****************************************************/
-        
-        function Angle(angle){
-            this.angle = angle;
-        }
-        
-        Angle.prototype = {
-            angle: 0,
-
-            get: function(){
-                return this.angle;
-            },
-            
-            set: function(angle){
-                angle += "";
-                this.angle = angle * 1;
-            },
-            
-            add: function(angle){
-                angle += "";
-                this.angle += angle * 1;
-            },
-            
-            normalize: function(){
-                this.angle = this.normalized();
-            },
-            
-            normalized: function(){
-                var angle = this.angle;
-                if (angle < 0) angle = 360 + angle % 360;
-                if (angle >= 360) angle = angle % 360;
-                
-                return angle;
-            },
-            
-            distance: function(angle){
-                if (typeof angle !== "object") angle = new Angle(angle);
-
-                var calcAngle = this.normalized() - angle.normalized();
-                var isPositive = false;
-
-                if (calcAngle >= 0){
-                    isPositive = calcAngle <= 300;
-                    if (!isPositive) calcAngle = 360 - calcAngle;
-                } else {
-                    isPositive = -calcAngle > 60;
-                    if (isPositive) calcAngle += 360;
-                }
-                
-                calcAngle = Math.abs(calcAngle);
-
-                return new Angle(isPositive ? calcAngle : -calcAngle);
-            },
-            
-            toTime: function(){
-                var time = new Date();
-                var hourAngle = Angle.fromTimeHour(time);
-                var milliseconds = this.distance(hourAngle).toMilliseconds();
-                return new Date(time.getTime() + milliseconds);
-            },
-            
-            /**
-             * 12 hours in 360 degrees
-             */
-            toMilliseconds: function(){
-                return 12 * 60 * 60 * 1000 / 360 * this.angle;
-            },
-            
-            toString: function(){
-                return this.get();
-            }
-        }
-
-        Angle.config = {
-            startAngle: 270,
-            oneHourAngle: 30,
-            oneMinuteAngle: 6,
-            oneSecondAngle: 6
-        }
-
-        Angle.fromPoint = function(x1, x2, y1, y2){
-            x2 = x2 - Math.floor(document.body.clientWidth / 2);
-            y2 = y2 - Math.floor(document.body.clientHeight / 2);
-        
-            var angle = Math.atan2(x1-x2,y1-y2)*(180/Math.PI);
-            angle += 90;
-            if(angle < 0){
-                angle = Math.abs(angle);
+        for (var x in attr){
+            var attrParts = x.split(':', 2);
+            if (attrParts.length == 2 && attrParts[0] == 'xlink'){
+                this.getNode().setAttributeNS(Element.xlinkNS, attrParts[1], attr[x]);
             } else {
-                angle = 360 - angle;
-            }
-            return new Angle(angle);
-        }
-        
-        Angle.fromTimeHour = function(time){
-            var angle = new Angle(Angle.config.startAngle + Angle.config.oneHourAngle * (time.getHours() + time.getMinutes() / 60 + time.getSeconds() / 3600));
-            angle.normalize();
-            return angle;
-        }
-            
-        Angle.fromTimeMinute = function(time){
-            var angle = new Angle(Angle.config.startAngle + Angle.config.oneMinuteAngle * (time.getMinutes() + time.getSeconds() / 60));
-            angle.normalize();
-            return angle;
-        }
-        
-        Angle.fromTimeSecond = function(time){
-            var angle = new Angle(Angle.config.startAngle + Angle.config.oneSecondAngle * (time.getSeconds() + time.getMilliseconds() / 1000));
-            angle.normalize();
-            return angle;
-        }
-        
-        /****************************************************/
-        
-        function Element(node){
-            if (!node) throw new Error("DOM element required");
-            this.node = node;
-        }
-        
-        Element.prototype = {
-            getNode: function(){
-                return this.node;
-            },
-        
-            append: function(element){
-                this.getNode().appendChild(element.getNode());
-            },
-            
-            appendTo: function(element){
-                element.getNode().appendChild(this.getNode());
-            },
-            
-            attr: function(attr, value){
-                if (typeof attr !== "object"){
-                    if (value === undefined){
-                        return this.getNode().getAttribute(attr);
-                    }
-                    
-                    var attrName = attr;
-                    attr = {};
-                    attr[attrName] = value;
-                }
-                
-                for (var x in attr){
-                    var attrParts = x.split(':', 2);
-                    if (attrParts.length == 2 && attrParts[0] == 'xlink'){
-                        this.getNode().setAttributeNS(Element.xlinkNS, attrParts[1], attr[x]);
-                    } else {
-                        this.getNode().setAttributeNS(null, x, attr[x]);
-                    }
-                }
-            },
-            
-            html: function(html){
-                this.getNode().innerHTML = html;
-            },
-            
-            text: function(text){
-                var textNode = document.createTextNode(text);
-                
-                var children = this.getNode().childNodes;
-                while(children.length) {
-                    this.getNode().removeChild(children[0]);
-                }
-                this.getNode().appendChild(textNode);
-            },
-            
-            val: function(value){
-                if (value === undefined){
-                    return this.getNode().value;
-                }
-                this.getNode().value = value;
-            },
-            
-            on: function(event, callback){
-                event = "on" + event;
-                this.getNode()[event] = callback;
-            },
-            
-            transform: function(type){
-                var args = Array.prototype.slice.call(arguments);
-                var strArgs = args.slice(1).join(",");
-                this.attr("transform", type + "(" + strArgs + ")");
-            },
-            
-            animate: function(attr, value, duration){
-                var cValue = this.attr(attr);
-                var size = Math.abs(cValue - value);
-                
-                //@todo finish this function 
+                this.getNode().setAttributeNS(null, x, attr[x]);
             }
         }
+    },
+    
+    html: function(html){
+        this.getNode().innerHTML = html;
+    },
+    
+    text: function(text){
+        var textNode = document.createTextNode(text);
         
-        Element.xmlNS = "http://www.w3.org/2000/svg";
-        Element.xlinkNS = "http://www.w3.org/1999/xlink";
-        
-        Element.create = function(tag){
-            var node = document.createElementNS(Element.xmlNS, tag);
-            return new Element(node);
+        var children = this.getNode().childNodes;
+        while(children.length) {
+            this.getNode().removeChild(children[0]);
         }
-        
-        Element.use = function(id){
-            var el = Element.create('use');
-            el.attr("xlink:href", '#' + id);
-            return el;
+        this.getNode().appendChild(textNode);
+    },
+    
+    val: function(value){
+        if (value === undefined){
+            return this.getNode().value;
         }
+        this.getNode().value = value;
+    },
+    
+    on: function(event, callback){
+        event = "on" + event;
+        this.getNode()[event] = callback;
+    },
+    
+    transform: function(type){
+        var args = Array.prototype.slice.call(arguments);
+        var strArgs = args.slice(1).join(",");
+        this.attr("transform", type + "(" + strArgs + ")");
+    },
+    
+    animate: function(attr, value, duration){
+        var cValue = this.attr(attr);
+        var size = Math.abs(cValue - value);
         
-        Element.find = function(id){
-            var node = document.getElementById(id);
-            if (!node) return false;
-            
-            return new Element(node);
-        }
-        
-        /****************************************************/
-        
-        function formatTime(date){
-            var hours = date.getHours() + '';
-            var minutes = date.getMinutes() + '';
-            return (hours.length < 2 ? '0' : '') + hours + ':' + (minutes.length < 2 ? '0' : '') + minutes;
-        }
-        
-        /****************************************************/
-        
-        function EventDialog(clock){
-            this.clock = clock;
-        
-            this.timeNode = Element.find('setTime');
-            this.textNode = Element.find('eventName');
-            this.removeButton = Element.find('eventButtonRemove');
-            this.form = Element.find('eventForm');
-            this.prompt = Element.find('eventPrompt');
-        }
-        
-        EventDialog.prototype = {
-            show: function(angle){
-                var thisObj = this;
-                
-                var angle = new Angle(angle);
-                var markObj = new Mark(angle.get());
+        //@todo finish this function 
+    }
+}
 
-                this.timeNode.html(formatTime(angle.toTime()));
-                this.textNode.val(markObj.title);
-                
-                this.removeButton.on("click", function(){
-                    thisObj.remove(angle);
-                });
-                
-                this.form.on("submit", function(e){
-                    e.preventDefault();
-                    thisObj.submit(angle, thisObj.textNode.val());
-                    return false;
-                });
+Element.xmlNS = "http://www.w3.org/2000/svg";
+Element.xlinkNS = "http://www.w3.org/1999/xlink";
+
+Element.create = function(tag){
+    var node = document.createElementNS(Element.xmlNS, tag);
+    return new Element(node);
+}
+
+Element.use = function(id){
+    var el = Element.create('use');
+    el.attr("xlink:href", '#' + id);
+    return el;
+}
+
+Element.find = function(id){
+    var node = document.getElementById(id);
+    if (!node) return false;
+    
+    return new Element(node);
+}
+
+/****************************************************/
+
+function formatTime(date){
+    var hours = date.getHours() + '';
+    var minutes = date.getMinutes() + '';
+    return (hours.length < 2 ? '0' : '') + hours + ':' + (minutes.length < 2 ? '0' : '') + minutes;
+}
+
+/****************************************************/
+
+function EventDialog(clock){
+    this.clock = clock;
+
+    this.timeNode = Element.find('setTime');
+    this.textNode = Element.find('eventName');
+    this.removeButton = Element.find('eventButtonRemove');
+    this.form = Element.find('eventForm');
+    this.prompt = Element.find('eventPrompt');
+}
+
+EventDialog.prototype = {
+    show: function(angle){
+        var thisObj = this;
+        
+        var angle = new Angle(angle);
+        var markObj = new Mark(angle.get());
+
+        this.timeNode.html(formatTime(angle.toTime()));
+        this.textNode.val(markObj.title);
+        
+        this.removeButton.on("click", function(){
+            thisObj.remove(angle);
+        });
+        
+        this.form.on("submit", function(e){
+            e.preventDefault();
+            thisObj.submit(angle, thisObj.textNode.val());
+            return false;
+        });
+    
+        markObj.checked = true;
+        markObj.time = angle.toTime();
+        markObj.save();
+    
+        this.prompt.attr('display', 'inline');
+        
+        this.clock.updateMarks();
+    },
+    
+    remove: function(angle){
+        this.close();
+        
+        var markObj = new Mark(angle.get());
+        markObj.checked = false;
+        markObj.save();
+        
+        this.clock.updateMarks();
+    },
+    
+    submit: function(angle, title){
+        this.close();
+        
+        var markObj = new Mark(angle.get());
+        markObj.checked = true;
+        markObj.title = title;
+        markObj.time = angle.toTime();
+        markObj.save();
+        
+        this.clock.updateMarks();
+    },
+    
+    close: function(){
+        this.prompt.attr('display', 'none');
+    }
+}
+
+/****************************************************/
+
+function Clock(){
+    this.markStep = 5;
+    this.stopDelay = 200; //milliseconds
+    this.moveSpeed = 1/4; //1 is the speed of mouse
+    this.marksUpdateInterval = 60000; // in milliseconds
+    this.timeUpdateInterval = 1000; // in milliseconds
+    
+    this.markReadyColor = "#66ff00";
+    
+    this.hoursArrow = Element.find('hours');
+    this.minutesArrow = Element.find('minutes');
+    this.secondsArrow = Element.find('seconds');
+    
+    this.lastMarksUpdateTime = new Date();
+    
+    this.createMarks();
+    
+    this.activeMark = null;
+    
+    this.clockface = Element.find('clockface');
+    var body = new Element(document.body);
+    this.attachTouchEvents(this.clockface, body);
+    this.attachMouseEvents(this.clockface, body);
+    
+    this.isMarkReady = false;
+    this.stopTimeout = null;
+    
+    this.speedTimeBlock = Element.find('speedTimeBlock');
+    this.speedTime = Element.find('speedTime');
+    this.speedTimeMarker = Element.find('speedTimeMarker');
+    
+    this.eventDialog = new EventDialog(this);
+    
+    this.touchStartAngle = null;
+    this.currentAngle = null;
+    
+    this.initServiceButtons();
+}
+
+Clock.prototype = {
+    start: function(){
+        var thisObj = this;
+    
+        this.updateMarks();
+        this.updateTime();
+        setInterval(function(){
+            thisObj.updateTime();
+        }, this.timeUpdateInterval);
+        
+        this.clockface.attr('display', 'inline');
+    },
+
+    initServiceButtons: function(){
+        var thisObj = this;
+        Element.find('clearButton').on("click", function(e){
+            e.preventDefault();
+            localStorage.clear();
+            thisObj.updateMarks();
+        });
+        
+        Element.find('reloadButton').on("click", function(e){
+            e.preventDefault();
+            alert('Reload data. Coming soon...');
+        });
+    },
+
+    attachTouchEvents: function(element, body){
+        var thisObj = this;
+        var isTouchStart = false;
+    
+        element.on("touchstart", function(e){
+            e.preventDefault();
             
-                markObj.checked = true;
-                markObj.time = angle.toTime();
-                markObj.save();
+            if (isTouchStart) return;
+            isTouchStart = true;
             
-                this.prompt.attr('display', 'inline');
-                
-                this.clock.updateMarks();
-            },
+            var touch = e.touches[0];
+            thisObj.startHighlightMark(touch.pageX, touch.pageY);
+            thisObj.highlightMark(touch.pageX, touch.pageY);
+        });
+        
+        body.on("touchmove", function(e){
+            e.preventDefault();
+            if (isTouchStart){
+                var touch = e.touches[0];
+                thisObj.highlightMark(touch.pageX, touch.pageY);
+            }
+        });
+        
+        body.on("touchend", function(){
+            isTouchStart = false;
+            thisObj.stopHighlightMark();
+        });
+    },
+
+    attachMouseEvents: function(element, body){
+        var thisObj = this;
+        var isMouseDown = false;
+    
+        element.on("mousedown", function(e){
+            e.preventDefault();
             
-            remove: function(angle){
-                this.close();
-                
-                var markObj = new Mark(angle.get());
+            if (isMouseDown) return;
+            isMouseDown = true;
+
+            thisObj.startHighlightMark(e.pageX, e.pageY);
+            thisObj.highlightMark(e.pageX, e.pageY);
+        });
+        
+        body.on("mousemove", function(e){
+            e.preventDefault();
+            if (isMouseDown){
+                thisObj.highlightMark(e.pageX, e.pageY);
+            }
+        });
+        
+        body.on("mouseup", function(){
+            isMouseDown = false;
+            thisObj.stopHighlightMark();
+        });
+    },
+
+    startHighlightMark: function(x, y){
+        this.touchStartAngle = Angle.fromPoint(0, x, 0, y);
+        this.currentAngle = new Angle(this.touchStartAngle.get());
+        this.activeMark = null;
+    },
+
+    highlightMark: function(x, y){
+        var thisObj = this;
+        
+        var angle = Angle.fromPoint(0, x, 0, y);
+        var diffAngle = angle.get() - this.currentAngle.normalized();
+        if (Math.abs(diffAngle) > 180) {
+            var sign = diffAngle <= 0 ? 1 : -1;
+            diffAngle = (360 - Math.abs(diffAngle)) * sign;
+        }
+        
+        this.currentAngle.add(diffAngle);
+
+        angle.set(this.touchStartAngle.get() + (this.currentAngle.get() - this.touchStartAngle.get()) * this.moveSpeed);
+        angle.set(Math.round(angle.get() / this.markStep) * this.markStep + 180);
+        angle.normalize();
+
+        var mark = Element.find(this.getMarkId(angle.get()));
+        if (!mark || (this.activeMark && mark.attr('data-angle') == this.activeMark.attr('data-angle'))) return;
+        
+        if (this.stopTimeout) clearTimeout(this.stopTimeout);
+        
+        this.isMarkReady = false;
+        this.stopTimeout = setTimeout(function(){
+            thisObj.setMarkReady(mark);
+        }, this.stopDelay);
+        
+        this.activeMark = mark;
+        
+        this.showSpeedTime(angle);
+    },
+
+    stopHighlightMark: function(){
+        if (!this.activeMark) return;
+
+        if (this.isMarkReady){
+            this.eventDialog.show(this.activeMark.attr('data-angle'));
+        }
+
+        this.activeMark = null;
+        this.hideSpeedTime();
+    },
+    
+    setMarkReady: function(mark){
+        this.isMarkReady = true;
+    },
+
+    showSpeedTime: function(angle){
+        var textTime = formatTime(angle.toTime());
+        this.speedTime.text(textTime);
+        this.speedTimeBlock.attr('display', 'inline');
+        
+        var time = new Date();
+        var hourAngle = Angle.fromTimeHour(time);
+        var distance = angle.distance(hourAngle);
+        
+        this.speedTimeMarker.transform("rotate", angle.get());
+        this.speedTimeMarker.attr('fill', this.getFillColor(distance));
+    },
+
+    hideSpeedTime: function(){
+        this.speedTimeBlock.attr('display', 'none');
+    },
+
+    getMarkId: function(id){
+        return 'mark_' + id;
+    },
+    
+    updateTime: function(){
+        var time = new Date();
+        
+        this.hoursArrow.transform("rotate", Angle.fromTimeHour(time).get());
+        this.minutesArrow.transform("rotate", Angle.fromTimeMinute(time).get());
+        this.secondsArrow.transform("rotate", Angle.fromTimeSecond(time).get());
+        
+        if ((time.getTime() - this.lastMarksUpdateTime.getTime()) > this.marksUpdateInterval){
+            this.updateMarks();
+        }
+    },
+    
+    updateMarks: function(){
+        var time = new Date();
+        var hourAngle = Angle.fromTimeHour(time);
+        
+        var testTime = (new Angle(60)).toMilliseconds();
+        
+        for (var angle = 0; angle < 360; angle += this.markStep){
+            var oAngle = new Angle(angle);
+            
+            var markObj = new Mark(oAngle.get());
+            if (markObj.checked && (time.getTime() - markObj.time.getTime() > testTime)){
                 markObj.checked = false;
                 markObj.save();
-                
-                this.clock.updateMarks();
-            },
-            
-            submit: function(angle, title){
-                this.close();
-                
-                var markObj = new Mark(angle.get());
-                markObj.checked = true;
-                markObj.title = title;
-                markObj.time = angle.toTime();
-                markObj.save();
-                
-                this.clock.updateMarks();
-            },
-            
-            close: function(){
-                this.prompt.attr('display', 'none');
             }
+            
+            var mark = Element.find(this.getMarkId(oAngle.get()));
+            if (!mark) continue;
+            
+            var distance = oAngle.distance(hourAngle);
+
+            mark.attr({
+                "fill": markObj.checked ? this.getFillColor(distance) : '#eee',
+                "fill-opacity": this.getOpacity(distance)
+            });
         }
         
-        /****************************************************/
-        
-        function Clock(){
-            this.markStep = 5;
-            this.stopDelay = 200; //milliseconds
-            this.moveSpeed = 1/4; //1 is the speed of mouse
-            this.marksUpdateInterval = 60000; // in milliseconds
-            this.timeUpdateInterval = 1000; // in milliseconds
+        this.lastMarksUpdateTime = time;
+    },
+
+    createMarks: function(){
+        var clockmarkslive = Element.find('clockmarkslive');
+        var touchTextureBlock = Element.find('touchTextureBlock');
+
+        for (var angle = 0; angle < 360; angle += this.markStep){
+            var oAngle = new Angle(angle);
             
-            this.markReadyColor = "#66ff00";
+            var textureElement = this.drawTouchTexture(oAngle);
+            touchTextureBlock.append(textureElement);
             
-            this.hoursArrow = Element.find('hours');
-            this.minutesArrow = Element.find('minutes');
-            this.secondsArrow = Element.find('seconds');
-            
-            this.lastMarksUpdateTime = new Date();
-            
-            this.createMarks();
-            
-            this.activeMark = null;
-            
-            var clockface = Element.find('clockface');
-            var body = new Element(document.body);
-            this.attachTouchEvents(clockface, body);
-            this.attachMouseEvents(clockface, body);
-            
-            this.isMarkReady = false;
-            this.stopTimeout = null;
-            
-            this.speedTimeBlock = Element.find('speedTimeBlock');
-            this.speedTime = Element.find('speedTime');
-            this.speedTimeMarker = Element.find('speedTimeMarker');
-            
-            this.eventDialog = new EventDialog(this);
-            
-            this.touchStartAngle = null;
-            this.currentAngle = null;
-            
-            this.initServiceButtons();
+            var markElement = this.drawMark(oAngle);
+            clockmarkslive.append(markElement);
         }
-        
-        Clock.prototype = {
-            initServiceButtons: function(){
-                var thisObj = this;
-                Element.find('clearButton').on("click", function(e){
-                    e.preventDefault();
-                    localStorage.clear();
-                    thisObj.updateMarks();
-                });
-                
-                Element.find('reloadButton').on("click", function(e){
-                    e.preventDefault();
-                    alert('Reload data. Coming soon...');
-                });
-            },
-        
-            attachTouchEvents: function(element, body){
-                var thisObj = this;
-                var isTouchStart = false;
-            
-                element.on("touchstart", function(e){
-                    e.preventDefault();
-                    
-                    if (isTouchStart) return;
-                    isTouchStart = true;
-                    
-                    var touch = e.touches[0];
-                    thisObj.startHighlightMark(touch.pageX, touch.pageY);
-                    thisObj.highlightMark(touch.pageX, touch.pageY);
-                });
-                
-                body.on("touchmove", function(e){
-                    e.preventDefault();
-                    if (isTouchStart){
-                        var touch = e.touches[0];
-                        thisObj.highlightMark(touch.pageX, touch.pageY);
-                    }
-                });
-                
-                body.on("touchend", function(){
-                    isTouchStart = false;
-                    thisObj.stopHighlightMark();
-                });
-            },
-        
-            attachMouseEvents: function(element, body){
-                var thisObj = this;
-                var isMouseDown = false;
-            
-                element.on("mousedown", function(e){
-                    e.preventDefault();
-                    
-                    if (isMouseDown) return;
-                    isMouseDown = true;
-
-                    thisObj.startHighlightMark(e.pageX, e.pageY);
-                    thisObj.highlightMark(e.pageX, e.pageY);
-                });
-                
-                body.on("mousemove", function(e){
-                    e.preventDefault();
-                    if (isMouseDown){
-                        thisObj.highlightMark(e.pageX, e.pageY);
-                    }
-                });
-                
-                body.on("mouseup", function(){
-                    isMouseDown = false;
-                    thisObj.stopHighlightMark();
-                });
-            },
-        
-            startHighlightMark: function(x, y){
-                this.touchStartAngle = Angle.fromPoint(0, x, 0, y);
-                this.currentAngle = new Angle(this.touchStartAngle.get());
-                this.activeMark = null;
-            },
-        
-            highlightMark: function(x, y){
-                var thisObj = this;
-                
-                var angle = Angle.fromPoint(0, x, 0, y);
-                var diffAngle = angle.get() - this.currentAngle.normalized();
-                if (Math.abs(diffAngle) > 180) {
-                    var sign = diffAngle <= 0 ? 1 : -1;
-                    diffAngle = (360 - Math.abs(diffAngle)) * sign;
-                }
-                
-                this.currentAngle.add(diffAngle);
-
-                angle.set(this.touchStartAngle.get() + (this.currentAngle.get() - this.touchStartAngle.get()) * this.moveSpeed);
-                angle.set(Math.round(angle.get() / this.markStep) * this.markStep + 180);
-                angle.normalize();
-
-                var mark = Element.find(this.getMarkId(angle.get()));
-                if (!mark || (this.activeMark && mark.attr('data-angle') == this.activeMark.attr('data-angle'))) return;
-                
-                if (this.stopTimeout) clearTimeout(this.stopTimeout);
-                
-                this.isMarkReady = false;
-                this.stopTimeout = setTimeout(function(){
-                    thisObj.setMarkReady(mark);
-                }, this.stopDelay);
-                
-                this.activeMark = mark;
-                
-                this.showSpeedTime(angle);
-            },
-        
-            stopHighlightMark: function(){
-                if (!this.activeMark) return;
-
-                if (this.isMarkReady){
-                    this.eventDialog.show(this.activeMark.attr('data-angle'));
-                }
-
-                this.activeMark = null;
-                this.hideSpeedTime();
-            },
-            
-            setMarkReady: function(mark){
-                this.isMarkReady = true;
-            },
-
-            showSpeedTime: function(angle){
-                var textTime = formatTime(angle.toTime());
-                this.speedTime.text(textTime);
-                this.speedTimeBlock.attr('display', 'inline');
-                
-                var time = new Date();
-                var hourAngle = Angle.fromTimeHour(time);
-                var distance = angle.distance(hourAngle);
-                
-                this.speedTimeMarker.transform("rotate", angle.get());
-                this.speedTimeMarker.attr('fill', this.getFillColor(distance));
-            },
-        
-            hideSpeedTime: function(){
-                this.speedTimeBlock.attr('display', 'none');
-            },
-        
-            getMarkId: function(id){
-                return 'mark_' + id;
-            },
-
-            start: function(){
-                var thisObj = this;
-            
-                this.updateMarks();
-                this.updateTime();
-                setInterval(function(){
-                    thisObj.updateTime();
-                }, this.timeUpdateInterval);
-            },
-            
-            updateTime: function(){
-                var time = new Date();
-                
-                this.hoursArrow.transform("rotate", Angle.fromTimeHour(time).get());
-                this.minutesArrow.transform("rotate", Angle.fromTimeMinute(time).get());
-                this.secondsArrow.transform("rotate", Angle.fromTimeSecond(time).get());
-                
-                if ((time.getTime() - this.lastMarksUpdateTime.getTime()) > this.marksUpdateInterval){
-                    this.updateMarks();
-                }
-            },
-            
-            updateMarks: function(){
-                var time = new Date();
-                var hourAngle = Angle.fromTimeHour(time);
-                
-                var testTime = (new Angle(60)).toMilliseconds();
-                
-                for (var angle = 0; angle < 360; angle += this.markStep){
-                    var oAngle = new Angle(angle);
-                    
-                    var markObj = new Mark(oAngle.get());
-                    if (markObj.checked && (time.getTime() - markObj.time.getTime() > testTime)){
-                        markObj.checked = false;
-                        markObj.save();
-                    }
-                    
-                    var mark = Element.find(this.getMarkId(oAngle.get()));
-                    if (!mark) continue;
-                    
-                    var distance = oAngle.distance(hourAngle);
-
-                    mark.attr({
-                        "fill": markObj.checked ? this.getFillColor(distance) : '#eee',
-                        "fill-opacity": this.getOpacity(distance)
-                    });
-                }
-                
-                this.lastMarksUpdateTime = time;
-            },
-
-            createMarks: function(){
-                var clockmarkslive = Element.find('clockmarkslive');
-                var touchTextureBlock = Element.find('touchTextureBlock');
+    },
     
-                for (var angle = 0; angle < 360; angle += this.markStep){
-                    var oAngle = new Angle(angle);
-                    
-                    var textureElement = this.drawTouchTexture(oAngle);
-                    touchTextureBlock.append(textureElement);
-                    
-                    var markElement = this.drawMark(oAngle);
-                    clockmarkslive.append(markElement);
-                }
-            },
-            
-            drawMark: function(angle){
-                var useId = '';
-                if (!(angle.get() % Angle.config.oneHourAngle)){
-                    useId = 'markPrototype';
-                } else {
-                    useId = 'smallMarkPrototype';
-                }
-                
-                var mark = Element.use(useId);
-                mark.attr({
-                    "id": this.getMarkId(angle.get()),
-                    "data-angle": angle.get()
-                });
-                
-                mark.transform("rotate", angle.get());
-
-                return mark;
-            },
-            
-            drawTouchTexture: function(angle){
-                var textureElement = Element.use('touchTexture');
-                textureElement.transform("rotate", angle.get());
-                return textureElement;
-            },
-
-            getFillColor: function(dist){
-                var rgbcolor;
-                
-                if (dist.get() > 0){
-                    rgbcolor = dist.get() < 45 ? '#ffff00' : '#00ff00'; 
-                } else {
-                    rgbcolor = '#ff0000';
-                }
-                
-                return rgbcolor;
-            },
-            
-            getOpacity: function(dist){
-                var opacityStep = dist.get() > 0 ? 0 : 1 / 55;
-                var opacity = 1 - Math.abs(dist.get()) * opacityStep;
-                return opacity;
-            }
+    drawMark: function(angle){
+        var useId = '';
+        if (!(angle.get() % Angle.config.oneHourAngle)){
+            useId = 'markPrototype';
+        } else {
+            useId = 'smallMarkPrototype';
         }
-    ]]></script>
-</svg>
+        
+        var mark = Element.use(useId);
+        mark.attr({
+            "id": this.getMarkId(angle.get()),
+            "data-angle": angle.get()
+        });
+        
+        mark.transform("rotate", angle.get());
+
+        return mark;
+    },
+    
+    drawTouchTexture: function(angle){
+        var textureElement = Element.use('touchTexture');
+        textureElement.transform("rotate", angle.get());
+        return textureElement;
+    },
+
+    getFillColor: function(dist){
+        var rgbcolor;
+        
+        if (dist.get() > 0){
+            rgbcolor = dist.get() < 45 ? '#ffff00' : '#00ff00'; 
+        } else {
+            rgbcolor = '#ff0000';
+        }
+        
+        return rgbcolor;
+    },
+    
+    getOpacity: function(dist){
+        var opacityStep = dist.get() > 0 ? 0 : 1 / 55;
+        var opacity = 1 - Math.abs(dist.get()) * opacityStep;
+        return opacity;
+    }
+}
+</script>
 </body>
 </html>
