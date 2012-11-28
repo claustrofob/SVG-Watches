@@ -23,9 +23,9 @@
         preserveAspectRatio="xMidYMid meet" id="svg">
     <defs>
         <radialGradient id="touchGradient" cx="50%" cy="50%" r="50%">
-            <stop stop-color="#222" offset="40%"/>
+            <stop stop-color="#282828" offset="40%"/>
             <stop stop-color="#323232" offset="60%"/>
-            <stop stop-color="#222" offset="75%"/>
+            <stop stop-color="#282828" offset="75%"/>
         </radialGradient>
         <g id="touchTexture" fill="#eee" fill-opacity="0.1">
             <rect class="touch-texture-rect" x="260" y="-4" width="8" height="8"></rect>
@@ -504,12 +504,16 @@
             this.markStep = 5;
             this.stopDelay = 200; //milliseconds
             this.moveSpeed = 1/4; //1 is the speed of mouse
+            this.marksUpdateInterval = 60000; // in milliseconds
+            this.timeUpdateInterval = 1000; // in milliseconds
             
             this.markReadyColor = "#66ff00";
             
             this.hoursArrow = Element.find('hours');
             this.minutesArrow = Element.find('minutes');
             this.secondsArrow = Element.find('seconds');
+            
+            this.lastMarksUpdateTime = new Date();
             
             this.createMarks();
             
@@ -682,15 +686,11 @@
             start: function(){
                 var thisObj = this;
             
+                this.updateMarks();
                 this.updateTime();
                 setInterval(function(){
                     thisObj.updateTime();
-                }, 1000);
-                
-                this.updateMarks();
-                setInterval(function(){
-                    thisObj.updateMarks();
-                }, 60000);
+                }, this.timeUpdateInterval);
             },
             
             updateTime: function(){
@@ -699,6 +699,10 @@
                 this.hoursArrow.transform("rotate", Angle.fromTimeHour(time).get());
                 this.minutesArrow.transform("rotate", Angle.fromTimeMinute(time).get());
                 this.secondsArrow.transform("rotate", Angle.fromTimeSecond(time).get());
+                
+                if ((time.getTime() - this.lastMarksUpdateTime.getTime()) > this.marksUpdateInterval){
+                    this.updateMarks();
+                }
             },
             
             updateMarks: function(){
@@ -726,6 +730,8 @@
                         "fill-opacity": this.getOpacity(distance)
                     });
                 }
+                
+                this.lastMarksUpdateTime = time;
             },
 
             createMarks: function(){
