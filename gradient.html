@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+<div id="colors"></div>
+<script>
+function makeGradientColor(color1, color2, percent) {
+    function makeChannel(a, b) {
+        return a + Math.round((b-a)*(percent/100));
+    }
+
+    function makeColorPiece(num) {
+        num = Math.min(num, 255);   // not more than 255
+        num = Math.max(num, 0);     // not less than 0
+        var str = num.toString(16);
+        if (str.length < 2) {
+            str = "0" + str;
+        }
+        return str;
+    }
+
+    var r = makeChannel(color1.r, color2.r);
+    var g = makeChannel(color1.g, color2.g);
+    var b = makeChannel(color1.b, color2.b);
+    return "#" + 
+           makeColorPiece(r) + 
+           makeColorPiece(g) + 
+           makeColorPiece(b);
+}
+
+var div = document.getElementById('colors');
+for (var i = 1; i<=100; i++){
+    var c = document.createElement('div');
+    c.style.width="100px";
+    c.style.height="5px";
+    var color = makeGradientColor({r:255,g:0,b:0}, {r:255,g:255,b:0}, i);
+    c.style.background = color;
+    div.appendChild(c);
+}
+</script>
+</body>
+</html>

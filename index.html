@@ -76,8 +76,14 @@
         }
         ]]></style>
     </defs>
-    <circle id="clearButton" cx="900" cy="100" r="50" class="service-button shadow" />
-    <circle id="reloadButton" cx="100" cy="900" r="50" class="service-button shadow" />
+    <g id="clearButton" transform="translate(850, 50)">
+        <circle cx="50" cy="50" r="50" class="service-button shadow" />
+        <path transform="scale(2.5), translate(5, 5)" d="M25.947,11.14c0-5.174-3.979-9.406-10.613-9.406c-6.633,0-10.282,4.232-10.282,9.406c0,5.174,1.459,4.511,1.459,7.43c0,1.095-1.061,0.564-1.061,2.919c0,2.587,3.615,2.223,4.677,3.283c1.061,1.062,0.961,3.019,0.961,3.019s0.199,0.796,0.564,0.563c0,0,0.232,0.564,0.498,0.232c0,0,0.265,0.563,0.531,0.1c0,0,0.265,0.631,0.696,0.166c0,0,0.431,0.63,0.929,0.133c0,0,0.564,0.53,1.194,0.133c0.63,0.397,1.194-0.133,1.194-0.133c0.497,0.497,0.929-0.133,0.929-0.133c0.432,0.465,0.695-0.166,0.695-0.166c0.268,0.464,0.531-0.1,0.531-0.1c0.266,0.332,0.498-0.232,0.498-0.232c0.365,0.232,0.564-0.563,0.564-0.563s-0.1-1.957,0.961-3.019c1.062-1.061,4.676-0.696,4.676-3.283c0-2.354-1.061-1.824-1.061-2.919C24.488,15.651,25.947,16.314,25.947,11.14zM10.333,20.992c-1.783,0.285-2.59-0.215-2.785-1.492c-0.508-3.328,2.555-3.866,4.079-3.683c0.731,0.088,1.99,0.862,1.99,1.825C13.617,20.229,11.992,20.727,10.333,20.992zM16.461,25.303c-0.331,0-0.862-0.431-0.895-1.227c-0.033,0.796-0.63,1.227-0.961,1.227c-0.332,0-0.83-0.331-0.863-1.127c-0.033-0.796,1.028-4.013,1.792-4.013c0.762,0,1.824,3.217,1.791,4.013S16.794,25.303,16.461,25.303zM23.361,19.5c-0.195,1.277-1.004,1.777-2.787,1.492c-1.658-0.266-3.283-0.763-3.283-3.35c0-0.963,1.258-1.737,1.99-1.825C20.805,15.634,23.869,16.172,23.361,19.5z" fill="#eee"/>
+    </g>
+    <g id="reloadButton" transform="translate(50, 850)">
+        <circle cx="50" cy="50" r="50" class="service-button shadow" />
+        <path transform="scale(2.5), translate(4, 4)" d="M24.249,15.499c-0.009,4.832-3.918,8.741-8.75,8.75c-2.515,0-4.768-1.064-6.365-2.763l2.068-1.442l-7.901-3.703l0.744,8.694l2.193-1.529c2.244,2.594,5.562,4.242,9.26,4.242c6.767,0,12.249-5.482,12.249-12.249H24.249zM15.499,6.75c2.516,0,4.769,1.065,6.367,2.764l-2.068,1.443l7.901,3.701l-0.746-8.693l-2.192,1.529c-2.245-2.594-5.562-4.245-9.262-4.245C8.734,3.25,3.25,8.734,3.249,15.499H6.75C6.758,10.668,10.668,6.758,15.499,6.75z" fill="#eee"/>
+    </g>
     <g transform="translate(500, 500)">
         <g id="clockface" display="none">
             <circle cx="0" cy="0" r="485" class="clockface-cover" />
@@ -524,13 +530,13 @@ EventDialog.prototype = {
 /****************************************************/
 
 function Clock(){
-    this.markStep = 5;
-    this.stopDelay = 200; //milliseconds
-    this.moveSpeed = 1/4; //1 is the speed of mouse
-    this.marksUpdateInterval = 60000; // in milliseconds
-    this.timeUpdateInterval = 1000; // in milliseconds
-    
-    this.markReadyColor = "#66ff00";
+    this.options = {
+        markStep: 5,
+        stopDelay: 200, //milliseconds
+        moveSpeed: 1/5, //1 is the speed of mouse
+        marksUpdateInterval: 60000, // in milliseconds
+        timeUpdateInterval: 1000 // in milliseconds
+    }
     
     this.hoursArrow = Element.find('hours');
     this.minutesArrow = Element.find('minutes');
@@ -570,7 +576,7 @@ Clock.prototype = {
         this.updateTime();
         setInterval(function(){
             thisObj.updateTime();
-        }, this.timeUpdateInterval);
+        }, this.options.timeUpdateInterval);
         
         this.clockface.attr('display', 'inline');
     },
@@ -663,8 +669,8 @@ Clock.prototype = {
         
         this.currentAngle.add(diffAngle);
 
-        angle.set(this.touchStartAngle.get() + (this.currentAngle.get() - this.touchStartAngle.get()) * this.moveSpeed);
-        angle.set(Math.round(angle.get() / this.markStep) * this.markStep + 180);
+        angle.set(this.touchStartAngle.get() + (this.currentAngle.get() - this.touchStartAngle.get()) * this.options.moveSpeed);
+        angle.set(Math.round(angle.get() / this.options.markStep) * this.options.markStep + 180);
         angle.normalize();
 
         var mark = Element.find(this.getMarkId(angle.get()));
@@ -675,7 +681,7 @@ Clock.prototype = {
         this.isMarkReady = false;
         this.stopTimeout = setTimeout(function(){
             thisObj.setMarkReady(mark);
-        }, this.stopDelay);
+        }, this.options.stopDelay);
         
         this.activeMark = mark;
         
@@ -725,7 +731,7 @@ Clock.prototype = {
         this.minutesArrow.transform("rotate", Angle.fromTimeMinute(time).get());
         this.secondsArrow.transform("rotate", Angle.fromTimeSecond(time).get());
         
-        if ((time.getTime() - this.lastMarksUpdateTime.getTime()) > this.marksUpdateInterval){
+        if ((time.getTime() - this.lastMarksUpdateTime.getTime()) > this.options.marksUpdateInterval){
             this.updateMarks();
         }
     },
@@ -736,7 +742,7 @@ Clock.prototype = {
         
         var testTime = (new Angle(60)).toMilliseconds();
         
-        for (var angle = 0; angle < 360; angle += this.markStep){
+        for (var angle = 0; angle < 360; angle += this.options.markStep){
             var oAngle = new Angle(angle);
             
             var markObj = new Mark(oAngle.get());
@@ -763,7 +769,7 @@ Clock.prototype = {
         var clockmarkslive = Element.find('clockmarkslive');
         var touchTextureBlock = Element.find('touchTextureBlock');
 
-        for (var angle = 0; angle < 360; angle += this.markStep){
+        for (var angle = 0; angle < 360; angle += this.options.markStep){
             var oAngle = new Angle(angle);
             
             var textureElement = this.drawTouchTexture(oAngle);
