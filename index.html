@@ -461,6 +461,35 @@ function formatTime(date){
 
 /****************************************************/
 
+function getGradient(color1, color2, percent){
+    
+    function hexToRgb(hex) {
+        var bigint = parseInt(hex, 16);
+        var r = (bigint >> 16) & 255;
+        var g = (bigint >> 8) & 255;
+        var b = bigint & 255;
+
+        return {r: r, g: g, b: b};
+    }
+    
+    function makeChannel(a, b) {
+        var num = a + Math.round((b-a)*(percent/100));
+        num = Math.max(Math.min(num, 255), 0);
+        return num;
+    }
+
+    color1 = hexToRgb(color1.substring(1));
+    color2 = hexToRgb(color2.substring(1));
+    
+    var r = makeChannel(color1.r, color2.r);
+    var g = makeChannel(color1.g, color2.g);
+    var b = makeChannel(color1.b, color2.b);
+    
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+/****************************************************/
+
 function EventDialog(clock){
     this.clock = clock;
 
@@ -533,9 +562,15 @@ function Clock(){
     this.options = {
         markStep: 5,
         stopDelay: 200, //milliseconds
-        moveSpeed: 1/5, //1 is the speed of mouse
+        moveSpeed: 1/4, //1 is the speed of mouse
         marksUpdateInterval: 60000, // in milliseconds
-        timeUpdateInterval: 1000 // in milliseconds
+        timeUpdateInterval: 1000, // in milliseconds
+        boundColors: {
+            "-20": "#ff0000", //angle: color (only 6-digit hex)
+            "70": '#ffff00',
+            "120": '#00ff00',
+            "300": '#2e8b57'
+        }
     }
     
     this.hoursArrow = Element.find('hours');
@@ -566,6 +601,13 @@ function Clock(){
     this.currentAngle = null;
     
     this.initServiceButtons();
+    
+    this.boundAngles = [];
+    for (var i in this.options.boundColors){
+        this.boundAngles.push(parseInt(i));
+    }
+    
+    this.boundAngles.sort(function(a,b){return a-b});
 }
 
 Clock.prototype = {
@@ -807,14 +849,28 @@ Clock.prototype = {
 
     getFillColor: function(dist){
         var rgbcolor;
+        var i;
+        var bottomBound = false, topBound = false;
         
-        if (dist.get() > 0){
-            rgbcolor = dist.get() < 45 ? '#ffff00' : '#00ff00'; 
-        } else {
-            rgbcolor = '#ff0000';
+        for (i in this.boundAngles){
+            var angle = this.boundAngles[i];
+            if (dist.get() <= angle){
+                topBound = angle;
+                break;
+            } else {
+                bottomBound = angle;
+            }
         }
         
-        return rgbcolor;
+        if (topBound === false) topBound = bottomBound;
+        if (bottomBound === false) bottomBound = topBound;
+
+        var percent = 100;
+        if (topBound != bottomBound){
+            percent = Math.abs(topBound - dist.get()) * 100 / Math.abs(topBound - bottomBound);
+        }
+
+        return getGradient(this.options.boundColors[topBound + ''], this.options.boundColors[bottomBound + ''], percent);
     },
     
     getOpacity: function(dist){
