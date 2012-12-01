@@ -32,8 +32,8 @@
             <rect class="touch-texture-rect" x="280" y="-4" width="8" height="8"></rect>
             <rect class="touch-texture-rect" x="300" y="-4" width="8" height="8"></rect>
         </g>
-        <polygon id="markPrototype" points="355 10, 355 -10, 470 -13, 470 13" class="mark" />
-        <polygon id="smallMarkPrototype" points="395 9, 395 -9, 470 -11, 470 11" class="smallmark" />
+        <polygon id="markPrototype" points="375 10, 375 -10, 470 -13, 470 13" class="mark" />
+        <polygon id="smallMarkPrototype" points="410 9, 410 -9, 470 -11, 470 11" class="smallmark" />
         <filter id="drop-shadow"> 
             <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
             <feOffset in="blur" dx="1" dy="0" result="offsetBlur"/>
@@ -71,8 +71,14 @@
             text-anchor: middle;
             font-size: 140px;
         }
+        .time-hint{
+            fill: #aaa;
+            text-anchor: middle;
+            font-size: 50px;
+            font-weight: bold;      
+        }
         .speed-time-cover{
-            fill: #777;
+
         }
         ]]></style>
     </defs>
@@ -89,6 +95,12 @@
             <circle cx="0" cy="0" r="485" class="clockface-cover" />
             <g id="touchTextureBlock"></g>
             <g id="clockmarkslive"></g>
+            <g>
+            	<text x="0" y="-325" class="time-hint">12</text>
+            	<text x="342" y="15" class="time-hint">3</text>
+            	<text x="0" y="360" class="time-hint">6</text>
+            	<text x="-342" y="15" class="time-hint">9</text>
+            </g>
             <g id="hours">
                 <rect class="shadow arrows" x="-100" y="-15" width="350" height="30"></rect>
             </g>
@@ -102,7 +114,7 @@
             </g>
             <g id="speedTimeBlock" display="none">
                 <polygon id="speedTimeMarker" points="420 0, 495 -25, 495 25" class="shadow" />
-                <circle cx="0" cy="0" r="200" class="speed-time-cover" />
+                <circle id="speedTimeCover" cx="0" cy="0" r="200" class="speed-time-cover" />
                 <text id="speedTime" x="0" y="40" class="speed-time"></text>
             </g>
         </g>
@@ -566,9 +578,10 @@ function Clock(){
         marksUpdateInterval: 60000, // in milliseconds
         timeUpdateInterval: 1000, // in milliseconds
         boundColors: {
+        	"-50": "#960018",
             "-20": "#ff0000", //angle: color (only 6-digit hex)
-            "70": '#ffff00',
-            "120": '#00ff00',
+            "70": '#f4c430',
+            "120": '#34c924',
             "300": '#2e8b57'
         }
     }
@@ -594,6 +607,7 @@ function Clock(){
     this.speedTimeBlock = Element.find('speedTimeBlock');
     this.speedTime = Element.find('speedTime');
     this.speedTimeMarker = Element.find('speedTimeMarker');
+    this.speedTimeCover = Element.find('speedTimeCover');
     
     this.eventDialog = new EventDialog(this);
     
@@ -753,9 +767,11 @@ Clock.prototype = {
         var time = new Date();
         var hourAngle = Angle.fromTimeHour(time);
         var distance = angle.distance(hourAngle);
+        var color = this.getFillColor(distance);
         
         this.speedTimeMarker.transform("rotate", angle.get());
-        this.speedTimeMarker.attr('fill', this.getFillColor(distance));
+        this.speedTimeMarker.attr('fill', color);
+        this.speedTimeCover.attr('fill', color);
     },
 
     hideSpeedTime: function(){
