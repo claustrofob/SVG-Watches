@@ -97,12 +97,6 @@
             <circle cx="0" cy="0" r="485" class="clockface-cover" />
             <g id="touchTextureBlock"></g>
             <g id="clockmarkslive"></g>
-            <g>
-            	<text x="0" y="-325" class="time-hint">12</text>
-            	<text x="342" y="15" class="time-hint">3</text>
-            	<text x="0" y="360" class="time-hint">6</text>
-            	<text x="-342" y="15" class="time-hint">9</text>
-            </g>
             <g id="hours">
                 <rect class="shadow arrows" x="-100" y="-15" width="350" height="30"></rect>
             </g>
@@ -293,10 +287,10 @@ Angle.prototype = {
         var isPositive = false;
 
         if (calcAngle >= 0){
-            isPositive = calcAngle <= 300;
+            isPositive = calcAngle <= (360 - Angle.config.oldTimeShow);
             if (!isPositive) calcAngle = 360 - calcAngle;
         } else {
-            isPositive = -calcAngle > 60;
+            isPositive = -calcAngle > Angle.config.oldTimeShow;
             if (isPositive) calcAngle += 360;
         }
         
@@ -328,7 +322,8 @@ Angle.config = {
     startAngle: 270,
     oneHourAngle: 30,
     oneMinuteAngle: 6,
-    oneSecondAngle: 6
+    oneSecondAngle: 6,
+    oldTimeShow: 30
 }
 
 Angle.fromPoint = function(x1, x2, y1, y2){
@@ -580,7 +575,7 @@ function Clock(){
         marksUpdateInterval: 60000, // in milliseconds
         timeUpdateInterval: 1000, // in milliseconds
         boundColors: {
-        	"-50": "#960018",
+            "-50": "#960018",
             "-20": "#ff0000", //angle: color (only 6-digit hex)
             "70": '#f4c430',
             "120": '#34c924',
@@ -892,7 +887,7 @@ Clock.prototype = {
     },
     
     getOpacity: function(dist){
-        var opacityStep = dist.get() > 0 ? 0 : 1 / 55;
+        var opacityStep = dist.get() > 0 ? 1 / 400 : 0;
         var opacity = 1 - Math.abs(dist.get()) * opacityStep;
         return opacity;
     }
