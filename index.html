@@ -188,18 +188,17 @@
     </g>
 </svg>
 <script type="text/javascript">
-window.onload = function(){
-    var clock = new Clock();
-    clock.start();
-}
-
 function resizeSvg(){
     var svg = Element.find('svg');
     svg.attr({'width': window.innerWidth, 'height': window.innerHeight});
 }
 
-window.onresize = resizeSvg;
-
+var orientationEvent = "onorientationchange" in window ? "orientationchange" : "resize";
+window.addEventListener(orientationEvent, resizeSvg, false);
+window.addEventListener('load', function(){
+    var clock = new Clock();
+    clock.start();	
+}, false);
 /****************************************************/
 
 function Mark(id){
