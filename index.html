@@ -90,6 +90,8 @@
         }
         .clockface.active{
 			-webkit-transition: opacity 0.5s linear;
+			-moz-transition: opacity 0.5s linear;
+			-o-transition: opacity 0.5s linear;
 			opacity: 1;
         }
         ]]></style>
@@ -129,16 +131,16 @@
     </g>
 </svg>
 <style type="text/css">
-.visible{
-	display: block;
-}
-.invisible{
-	display: none;
-}
 .info-popup{
 	position: absolute;
-	top: 0;
+	top: -250px;
 	width: 100%;
+	-webkit-transition: top 0.3s ease;
+	-moz-transition: top 0.3s ease;
+	-o-transition: top 0.3s ease;
+}
+.visible .info-popup{
+	top: 0;
 }
 .info-popup-inner{
 	padding: 20px;
@@ -155,7 +157,7 @@
 .form-input{
     padding: 0;
     width: 100%;
-	height: 3.7em;
+	height: 72px;
     border: 0;
     background: #efefef;
 	resize: none;
@@ -472,6 +474,44 @@ Element.prototype = {
         var strArgs = args.slice(1).join(",");
         this.attr("transform", type + "(" + strArgs + ")");
     },
+
+    getClassList: function(){
+		var attrClass = this.getNode().getAttribute('class');
+		var classes = attrClass.split(/\s+/);
+		var fClasses = [];
+		for (var i in classes){
+			if (classes[i].length) fClasses.push(classes[i]);
+		}
+		
+		return fClasses;
+    },
+    
+    setClassList: function(classes){
+    	this.getNode().setAttributeNS(null, 'class', classes.join(" "));
+    },
+    
+    addClass: function(className){
+		var classes = this.getClassList();
+		for (var i in classes){
+			if (classes[i] == className){
+				return;
+			}
+		}
+		
+		classes.push(className);
+		this.setClassList(classes);
+    },
+    
+    removeClass: function(className){
+		var classes = this.getClassList();
+		for (var i in classes){
+			if (classes[i] == className){
+				delete classes[i]; 
+				this.setClassList(classes);
+				return;
+			}
+		}   	
+    },
     
     animate: function(attr, value, duration){
         var cValue = this.attr(attr);
@@ -575,7 +615,7 @@ EventDialog.prototype = {
         markObj.time = angle.toTime();
         markObj.save();
     
-        this.prompt.attr('class', 'visible');
+        this.prompt.addClass('visible');
         this.textNode.getNode().focus();
         
         this.clock.updateMarks();
@@ -604,7 +644,7 @@ EventDialog.prototype = {
     },
     
     close: function(){
-        this.prompt.attr('class', 'invisible');
+    	this.prompt.removeClass('visible');
     }
 }
 
@@ -674,7 +714,7 @@ Clock.prototype = {
             thisObj.updateTime();
         }, this.options.timeUpdateInterval);
         
-        this.clockface.attr('class', 'clockface active');
+        this.clockface.addClass('active');
     },
 
     initServiceButtons: function(){
