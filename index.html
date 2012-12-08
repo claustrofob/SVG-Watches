@@ -141,9 +141,9 @@
 	width: 100%;
 }
 .info-popup-inner{
-	padding: 30px;
+	padding: 20px;
 	background: #eee;
-	max-width: 640px;
+	max-width: 480px;
 	margin: 0 auto;
 	box-shadow: 0 3px 6px 3px #333;
 }
@@ -576,6 +576,7 @@ EventDialog.prototype = {
         markObj.save();
     
         this.prompt.attr('class', 'visible');
+        this.textNode.getNode().focus();
         
         this.clock.updateMarks();
     },
