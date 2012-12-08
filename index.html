@@ -126,67 +126,91 @@
                 <text id="speedTime" x="0" y="40" class="speed-time"></text>
             </g>
         </g>
-        <g transform="translate(-400, -235)">
-            <foreignObject id="eventPrompt" width="800" height="470" display="none">
-                <body xmlns="http://www.w3.org/1999/xhtml">
-                    <style type="text/css">
-                        .info-popup{
-                            padding: 30px 30px;
-                            background: #eee;
-                            border-radius: 14px;
-                            border: 8px solid #999;
-                        }
-                        .form-input{
-                            padding: 8px;
-                            width: 706px;
-                            border: 1px solid #999;
-                            border-radius: 5px;
-                            background: #efefef;
-                        }
-                        .text{
-                            color: #222;
-                            font-size: 70px;
-                            font-family: Georgia, Verdana;
-                        }
-                        .block{
-                            margin-bottom:10px;
-                        }
-                        .button{
-                            padding: 24px 20px;
-                            width: 350px;
-                            font-size: 50px;
-                        }
-                        .refuse-button{
-                            color: #777;
-                        }
-                        .time{
-                            font-size: 50px;
-                            font-weight: bold;
-                        }
-                    </style>
-                    <div class="info-popup">
-                        <form id="eventForm" method="post" action="">
-                            <div id="setTime" class="time block"></div>
-                            <div class="block input-block">
-                                <textarea id="eventName" class="form-input text" rows="2" placeholder="Wazzap!"></textarea>
-                            </div>
-                            <table width="100%">
-                                <tr>
-                                    <td align="left">
-                                        <input id="eventButtonRemove" type="button" class="text button refuse-button" name="remove" value="Remove">
-                                    </td>
-                                    <td align="right">
-                                        <input id="eventButtonSet" type="submit" class="text button" name="submit" value="Set">
-                                    </td>
-                                </tr>
-                            </table>
-                        </form>
-                    </div>
-                </body>
-            </foreignObject>
-        </g>
     </g>
 </svg>
+<style type="text/css">
+.visible{
+	display: block;
+}
+.invisible{
+	display: none;
+}
+.info-popup{
+	position: absolute;
+	top: 0;
+	width: 100%;
+}
+.info-popup-inner{
+	padding: 30px;
+	background: #eee;
+	max-width: 640px;
+	margin: 0 auto;
+	box-shadow: 0 3px 6px 3px #333;
+}
+.input-block{
+	border-radius: 5px;
+	padding: 5px;
+	border: 1px solid #aaa;	
+}
+.form-input{
+    padding: 0;
+    width: 100%;
+	height: 3.7em;
+    border: 0;
+    background: #efefef;
+	resize: none;
+}
+.text{
+    color: #222;
+    font-size: 3em;
+    font-family: Georgia, Verdana;
+}
+.block{
+    margin-bottom:10px;
+}
+.button{
+    padding: 24px 20px;
+    width: 98%;
+    font-size: 3em;
+}
+.refuse-button{
+    color: #777;
+}
+.time{
+    font-size: 2.5em;
+    font-weight: bold;
+}
+.buttons-box{
+	width: 100%;
+	border: 0;
+	border-collapse:collapse;
+}
+.buttons-box td{
+	padding: 0;
+}
+</style>
+<div id="eventPrompt" class="invisible">
+	<div class="info-popup">
+		<div class="info-popup-inner">
+			<form id="eventForm" method="post" action="">
+			    <div id="setTime" class="time block"></div>
+			    <div class="block input-block">
+			        <textarea id="eventName" class="form-input text" rows="2" placeholder="Wazzap!"></textarea>
+			    </div>
+			    <table class="buttons-box">
+			        <tr>
+			            <td align="left" width="50%">
+			                <input id="eventButtonRemove" type="button" class="text button refuse-button" name="remove" value="Remove">
+			            </td>
+			            <td align="right" width="50%">
+			                <input id="eventButtonSet" type="submit" class="text button" name="submit" value="Set">
+			            </td>
+			        </tr>
+			    </table>
+			</form>
+		</div>
+	</div>
+</div>
 <script type="text/javascript">
 function resizeSvg(){
     var svg = Element.find('svg');
@@ -551,7 +575,7 @@ EventDialog.prototype = {
         markObj.time = angle.toTime();
         markObj.save();
     
-        this.prompt.attr('display', 'inline');
+        this.prompt.attr('class', 'visible');
         
         this.clock.updateMarks();
     },
@@ -579,7 +603,7 @@ EventDialog.prototype = {
     },
     
     close: function(){
-        this.prompt.attr('display', 'none');
+        this.prompt.attr('class', 'invisible');
     }
 }
 
