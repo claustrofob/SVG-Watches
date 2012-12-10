@@ -157,6 +157,21 @@ window.addEventListener(orientationEvent, resizeSvg, false);
 window.addEventListener('load', function(){
     var clock = new Clock();
     clock.start();
+    
+    // Check if a new cache is available on page load.
+    window.applicationCache.addEventListener('updateready', function(e) {
+        if (window.applicationCache.status == window.applicationCache.UPDATEREADY) {
+            // Browser downloaded a new app cache.
+            // Swap it in and reload the page to get the new hotness.
+            window.applicationCache.swapCache();
+            if (confirm('A new version is available. Load it?')) {
+                window.location.reload();
+            }
+        } else {
+            // Manifest didn't changed. Nothing new to server.
+        }
+    }, false);
+
 }, false);
 
 resizeSvg();
