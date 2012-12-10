@@ -21,14 +21,35 @@ EventDialog.prototype = {
         this.timeNode.html(formatTime(angle.toTime()));
         this.textNode.val(markObj.title);
 
-        this.removeButton.on("click", function(){
+        var disableNonTouchEvents = false;
+        this.removeButton.on("touchstart", function(){
+            disableNonTouchEvents = true;
+        });
+        this.setButton.on("touchstart", function(){
+            disableNonTouchEvents = true;
+        });
+
+        this.removeButton.on("click", function(e){
+            e.preventDefault();
+            if (disableNonTouchEvents) return;
+            thisObj.remove(angle);
+        });
+
+        this.removeButton.on("touchend", function(e){
+            e.preventDefault();
             thisObj.remove(angle);
         });
 
         this.form.on("submit", function(e){
             e.preventDefault();
+            if (disableNonTouchEvents) return;
             thisObj.submit(angle, thisObj.textNode.val());
             return false;
+        });
+
+        this.setButton.on("touchend", function(e){
+            e.preventDefault();
+            thisObj.submit(angle, thisObj.textNode.val());
         });
 
         markObj.checked = true;
