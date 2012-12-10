@@ -3,12 +3,12 @@ html, body{
     padding: 0;
 }
 body{
-    background: #3B3B3B url(back.png);
+    background: #3B3B3B url(img/back.png);
     overflow: hidden;
     cursor: default;
 }
 #svg{
-    background: url(loader.gif) 50% 50% no-repeat;
+    background: url(img/loader.gif) 50% 50% no-repeat;
 }
 
 /* dialog */
